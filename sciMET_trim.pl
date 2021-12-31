@@ -5,6 +5,8 @@ BEGIN {
 	push @INC, $RealBin;
 }
 
+use Getopt::Std; %opt = ();
+
 # defaults
 $adapters = "$RealBin/sciMETv2_adapters.fa";
 $trimmomatic = "/home/users/oconneru/bin/Trimmomatic-0.38/trimmomatic-0.38.jar";
