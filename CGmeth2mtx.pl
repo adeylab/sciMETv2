@@ -2,41 +2,36 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("f:c:F:L:", \%opt);
+getopts("f:c:F:L:O:B:", \%opt);
 
 #defaults
-$minCalled = 10;
-$qualFrac = 0.75;
+$minCalled = 100;
+$qualFrac = 0.9;
 
 $die = "
 Usage:
 
-CGmeth2mtx.pl [options] [window bed file] [output prefix] [extracted_CG_methtylaiton.txt.gz] ...
-
-Extracted methylaiton files should be from the Bismark output.
+CGmeth2mtx.pl [options] -B [window bed file] -O [output prefix] -F [methylation chrom folder] ...
 
 Options:
 
+-F   [DIR]   Directory with CG methylation chromosome windows (req)
+-B   [STR]   Bed file of windows for computing methylaiton (req)
+-O   [STR]   Output prefix (req)
+
 -c   [INT]   Min bases called per cell per window to qualify (def = $minCalled)
 -f   [STR]   Fraction of cells that qualify to include window  (def = $qualFrac)
--F   [DIR]   If defined will assume input files are already chrom split.
-               No methylaiton input files needed. (uses DIR)
+
 -L   [STR]   File of list of passing cellIDs (will filter to them)
 
 ";
 
 # PARSE OPTS
 
-if (defined $opt{'c'}) {$minCalled = $opt{'c'}};
-if (defined $opt{'f'}) {$qualFrac = $opt{'f'}};
+if (!defined $opt{'F'} ||
+	!defined $opt{'O'} ||
+	!defined $opt{'B'}) {die $die};
 
-if (!defined $opt{'F'} && !defined $ARGV[2]) {
-	die $die;
-} elsif (defined $opt{'F'} && !defined $ARGV[1]) {
-	die $die;
-}
-
-if (!defined $opt{'F'}) {system("mkdir $ARGV[1].chroms")};
 
 if (defined $opt{'L'}) {
 	open IN, "$opt{'L'}";
@@ -47,8 +42,11 @@ if (defined $opt{'L'}) {
 	} close IN;
 }
 
+if (defined $opt{'c'}) {$minCalled = $opt{'c'}};
+if (defined $opt{'f'}) {$qualFrac = $opt{'f'}};
+
 $winID = 0;
-open BED, "$ARGV[0]";
+open BED, "$opt{'B'}";
 while ($l = <BED>) {
 	chomp $l;
 	@P = split(/\t/, $l);
@@ -58,96 +56,24 @@ while ($l = <BED>) {
 	$WINNAME_winID{$win_name} = $winID;
 	$CHR_START_win{$P[0]}{$P[1]} = $winID;
 	$WINID_end{$winID} = $P[2];
+
+	$CHR_HANDLES{$P[0]} = 1;
 	
-	if (!defined $CHR_HANDLES{$P[0]} && !defined $opt{'F'}) {
-		$CHR_HANDLES{$P[0]} = "$P[0].handle";
-		$handle = $CHR_HANDLES{$P[0]};
-		open $handle, "| gzip > $ARGV[1].chroms/$P[0].CG.bed.gz";
-		$CHR_cov{$P[0]} = 0;
-	}
-	
-	if (defined $opt{'F'}) {
-		$CHR_HANDLES{$P[0]} = 1;
-	}
 }
 $lastWin = $winID;
 
-@CELLIDs = ();
-open PROG, ">$ARGV[1].progress.log";
-$bases_processed = 0;
-$increment = 10000000; $report = $increment;
-$ts = localtime(time);
-print PROG "$ts\tProgram called.\n====== Parsing files into chromosomes\n";
-
 $CONTEXT_total{'Z'}=0;
 $CONTEXT_total{'z'}=0;
-
 $not_in_window=0;
-
-if (!defined $opt{'F'}) {
-	for ($i = 2; $i < @ARGV; $i++) {
-		open IN, "zcat $ARGV[$i] |";
-		while ($l = <IN>) {
-			chomp $l;
-			if ($l !~ /^Bismark/) {
-				$bases_processed++;
-				if ($bases_processed >= $report) {
-					$report += $increment;
-					$ts = localtime(time);
-					print PROG "$ts\t$bases_processed bases processed. $not_in_window bases not in windows. $cellCT cells. Z=$CONTEXT_total{'Z'},z=$CONTEXT_total{'z'}\n";
-				}
-				@P = split(/\t/, $l);
-				$cellID = $P[0]; $cellID =~ s/:.+$//;
-				
-				if (!defined $opt{'L'} || defined $PASSING_CELLS{$cellID}) {
-					if (defined $CHR_HANDLES{$P[2]}) {
-						$CHR_cov{$P[2]}++; # unused
-						$handle = $CHR_HANDLES{$P[2]};
-						print $handle "$P[2]\t$P[3]\t$P[3]\t$cellID\t$P[4]\n";
-						
-						if (!defined $CELLID_totalCov{$cellID}) {
-							$CELLID_totalCov{$cellID} = 1;
-							$cellCT++;
-							push @CELLIDs, $cellID;
-							$CELLID_CONTEXT_cov{$cellID}{'Z'} = 0;
-							$CELLID_CONTEXT_cov{$cellID}{'z'} = 0;;
-						} else {
-							$CELLID_totalCov{$cellID}++;
-						}
-						$CELLID_CONTEXT_cov{$cellID}{$P[4]}++;
-						$CONTEXT_total{$P[4]}++;
-					} else {
-						$not_in_window++;
-					}
-				}
-			}
-		}
-		close IN;
-	}
-	
-	foreach $chr (keys %CHR_HANDLES) {
-		$handle = $CHR_HANDLES{$chr};
-		close $handle;
-	}
-}
-
-if (!defined $opt{'F'}) {
-	$ts = localtime(time);
-	print PROG "$ts\t$bases_processed bases processed. $not_in_window bases not in windows. $cellCT cells. Z=$CONTEXT_total{'Z'},z=$CONTEXT_total{'z'}\n";
-} else {
-	$ts = localtime(time);
-	print PROG "$ts\tFolder provided as: $opt{'F'}\n";
-}
-print PROG "====== Initiating intersection by chromosome.\n";
-
 $win_with_cov=0;
+@CELLIDs = ();
 
 foreach $chr (keys %CHR_HANDLES) {
-	if (defined $opt{'F'}) {$chr_dir = $opt{'F'}} else {$chr_dir = "$ARGV[1].chroms"};
+	$chr_dir = $opt{'F'};
 	
 	if (-e "$chr_dir/$chr.CG.bed.gz") {
 		$ts = localtime(time);
-		print PROG "$ts\tFound $chr_dir/$chr.CG.bed.gz, processing...\n";
+		print STDERR "$ts\tFound $chr_dir/$chr.CG.bed.gz, processing...\n";
 		
 		open INT, "bedtools intersect -a $chr_dir/$chr.CG.bed.gz -b $ARGV[0] -wa -wb |";
 		# 0   1    2     3      4   5    6    7
@@ -189,7 +115,7 @@ foreach $chr (keys %CHR_HANDLES) {
 		} close INT;
 		
 	} else {
-		print PROG "WARNING: Cannot find $chr_dir/$chr.CG.bed.gz!\n";
+		print STDERR "WARNING: Cannot find $chr_dir/$chr.CG.bed.gz!\n";
 	}
 }
 
@@ -201,7 +127,7 @@ for ($i = 0; $i < @CELLIDs; $i++) {
 	$cellID = $CELLIDs[$i];
 	$header .= "$cellID\t";
 	$CELLID_methTotal{$cellID} = $CELLID_CONTEXT_cov{$cellID}{'Z'};
-	if (($CELLID_CONTEXT_cov{$cellID}{'z'}+$CELLID_CONTEXT_cov{$cellID}{'Z'})<1) {$CELLID_CONTEXT_cov{$cellID}{'z'}=1};
+	if (($CELLID_CONTEXT_cov{$cellID}{'z'}+$CELLID_CONTEXT_cov{$cellID}{'Z'})<1) {$CELLID_CONTEXT_cov{$cellID}{'z'}=10};
 		# pseudocount if 0; shouldn't ever happen, but will cancel cell out in final matrix (everything will be mean, but cell will get filtered later)
 	if (($CELLID_CONTEXT_cov{$cellID}{'Z'})<1) {$CELLID_CONTEXT_cov{$cellID}{'Z'}=1}; # pseudocount if 0
 	$CELLID_mCG{$cellID} = sprintf("%.3f", ($CELLID_CONTEXT_cov{$cellID}{'Z'})/($CELLID_CONTEXT_cov{$cellID}{'Z'}+$CELLID_CONTEXT_cov{$cellID}{'z'}));
@@ -224,7 +150,7 @@ for ($winID = 1; $winID <= $lastWin; $winID++) {
 		@M = split(//, $WINID_CELLID_covstr{$winID}{$cellID});
 		$meth = 0;
 		foreach $base (@M) {
-			if ($base eq "Z") {$meth++};
+			if ($base eq "H" || $base eq "X") {$meth++};
 		}
 		if ($cov > 0) {$frac = sprintf("%.3f", $meth/$cov)} else {$frac = $CELLID_mCG{$cellID}};
 		$CELLID_winMeth{$cellID} = $frac;
