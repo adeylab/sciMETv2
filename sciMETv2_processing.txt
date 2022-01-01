@@ -1,16 +1,23 @@
 
 
-1) unidex to generate demultiplexed reads as fastq files and filter to valid barcodes
-2) trimmomatic on read 1 and read 2 separately
-3) align to hybrid reference separately with read 1 using --pbat and read 2 as normal directional
-4) name sort the bam files then merge reads 1 and 2
-5) rmdup then observe complexity and run barnyard compare
+1) unidex to generate demultiplexed reads as fastq files and filter to valid barcodes (scMET mode)
+2) sciMET_trim.pl - runs trimmomatic using sciMET adapters and in single-end mode
+3) sciMET_align.pl to align to hybrid reference which will sort & merge as well
+4) scitools rmdup - plot complexity
+5) scitools barnyard-compare to get humand and mouse called cells, use read cutoff based on complexity plot
 
-6) filter asdapter-trimmed fastq files to only include individual species
+6) filter trimmed fastq files to be only human or mouse cell reads
 7) repeat alignment, sorting, merging, and rmdup for species alignments
-8a) on the pre-rmdup files, split to individual bam files then bam2mr for each cell then sort with 'sort -k 1,1 -k 2,2n -k 3,3n -k 6,6' merging both reads, then run preseq with -Q -e 5e+09 -s 1e+07
-8b) run bismark methylaiton extractor with the --comprehensive option (combines strands)
+8) run bismark methylaiton extractor with the --comprehensive option (combines strands)
 9) run CHmeth2mtx.pl using windows and CGmeth2mtx.pl using annotated regions
-10) run irlba using scitools on the ratio matrix for CH methylation
+   this will create a folder with "chroms" - methylaiton split by chromosome
+   can delete the methylaiton extractor files and use this folder as -F option to
+   run with laternative parameters
+10) scitools irlba on the CH methylaiton matrix (not the ratio.mtx)
 11) remove the first dimension (head -n1 then tail -n49 to same file)
 12) run umap / matrix-pg / etc...
+
+13) run getGeneMeth.pl using CH over gene bodies or CG over promoter regions
+    uses the chroms folder from step 9
+    use the annot file for clusters to make aggregate methylaiton for clusters
+    will also produce single-cell level methylation

@@ -33,8 +33,8 @@ Options:
 
 ";
 
-if (!defined $opt{'O'}) {die "\nSpecify output prefix as -O\n$die"};
-if (!defined $opt{'1'} && !defined $opt{'2'}) {die "\nSpecify at least one read as -1 or -2\n$die"};
+if (!defined $opt{'O'}) {die "\nERROR: Specify output prefix as -O\n$die"};
+if (!defined $opt{'1'} && !defined $opt{'2'}) {die "\nERROR: Specify at least one read as -1 or -2\n$die"};
 if (defined $opt{'A'}) {$adapters = $opt{'A'}};
 if (defined $opt{'T'}) {$trimmomatic = $opt{'T'}};
 if (defined $opt{'m'}) {$min_RL = $opt{'m'}};
