@@ -10,7 +10,7 @@ Barnyard portion
 Species-specific
 6) filter trimmed fastq files to be only human or mouse cell reads using scitools split-fastq
 7) repeat alignment, sorting, merging, and rmdup for species alignments
-8) run sciMET_extract.pl on the rmdup & filtered bam file to create context 'chrom' folders
+8) run sciMET_extract.pl on the rmdup & filtered bam file to create context 'chrom' folders then sort it with sciMET_sortChroms.pl
 9) run CHmeth2mtx.pl using windows and CGmeth2mtx.pl using annotated regions with the chroms folder
 10) scitools irlba on the CH methylaiton matrix (not the ratio.mtx)
 11) remove the first dimension (head -n1 then tail -n49 to same file) and see if it improves (otherwise keep all 50)

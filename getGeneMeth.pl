@@ -66,7 +66,7 @@ if (defined $opt{'A'}) {
 }
 
 # pull targets to a bed:
-open TAR, ">$opt{'O'}.targets.bed";
+open TAR, "| sort -k1,1 -k2,2n > $opt{'O'}.targets.bed";
 $genes = 0; $regions = 0;
 foreach $target (@ARGV) {
 	if ($target =~ /:/) {

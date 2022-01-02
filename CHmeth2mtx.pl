@@ -73,11 +73,11 @@ $win_with_cov=0;
 foreach $chr (keys %CHR_HANDLES) {
 	$chr_dir = $opt{'F'};
 	
-	if (-e "$chr_dir/$chr.CH.bed.gz") {
+	if (-e "$chr_dir/$chr.bed.gz") {
 		$ts = localtime(time);
-		print STDERR "$ts\tFound $chr_dir/$chr.CH.bed.gz, processing...\n";
+		print STDERR "$ts\tFound $chr_dir/$chr.bed.gz, processing...\n";
 		
-		open INT, "bedtools intersect -a $chr_dir/$chr.CH.bed.gz -b $ARGV[0] -wa -wb |";
+		open INT, "bedtools intersect -a $chr_dir/$chr.bed.gz -b $opt{'B'} -wa -wb |";
 		# 0   1    2     3      4   5    6    7
 		#chr pos1 pos2 cellID meth chr start end ...
 		
@@ -119,12 +119,12 @@ foreach $chr (keys %CHR_HANDLES) {
 		} close INT;
 		
 	} else {
-		print STDERR "WARNING: Cannot find $chr_dir/$chr.CH.bed.gz!\n";
+		print STDERR "WARNING: Cannot find $chr_dir/$chr.bed.gz!\n";
 	}
 }
 
-open CHM, ">$ARGV[1].CH.mtx";
-open CHMn, ">$ARGV[1].CH.ratio.mtx";
+open CHM, ">$opt{'O'}.CH.mtx";
+open CHMn, ">$opt{'O'}.CH.ratio.mtx";
 
 $header = "";
 for ($i = 0; $i < @CELLIDs; $i++) {
@@ -178,15 +178,14 @@ for ($winID = 1; $winID <= $lastWin; $winID++) {
 	}
 } close CHM; close CHMn;
 
-open CELLS, ">$ARGV[1].cellStats.txt";
+open CELLS, ">$opt{'O'}.cellStats.txt";
 foreach $cellID (@CELLIDs) {
 	print CELLS "$cellID\t$CELLID_totalCov{$cellID}\t$CELLID_methTotal{$cellID}\t$CELLID_mCH{$cellID}\t$CELLID_qualWin{$cellID}\n";
 } close CELLS;
 
-open LOG, ">$ARGV[1].otherStats.txt";
-print LOG "Bed file: $ARGV[0]
-Meth Files:";
-for ($i = 2; $i < @ARGV; $i++) {print LOG " $ARGV[$i]"};
+open LOG, ">$opt{'O'}.otherStats.txt";
+print LOG "Bed file: $opt{'B'}
+Meth Folder: $opt{'F'}\n";
 $passWin = sprintf("%.2f", (($lastWin-$failWinCT)/$lastWin)*100);
 $passWinCT = ($lastWin-$failWinCT);
 print LOG "
