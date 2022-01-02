@@ -126,12 +126,10 @@ close TAR;
 
 $chr_dir = $opt{'F'};
 foreach $chr (keys %CHR_READS) {
-	if (-e "$chr_dir/$chr.CH.bed.gz") {
-		$chr_file = "$chr_dir/$chr.CH.bed.gz";
-	} elsif (-e "$chr_dir/$chr.CG.bed.gz") {
-		$chr_file = "$chr_dir/$chr.CG.bed.gz";
+	if (-e "$chr_dir/$chr.bed.gz") {
+		$chr_file = "$chr_dir/$chr.bed.gz";
 	} else {
-		print STDERR "FATAL ERROR: Cannot find $chr.CH.bed.gz OR $chr.CG.bed.gz in target directory $chr_dir!\n";
+		print STDERR "FATAL ERROR: Cannot find $chr.bed.gz in target directory $chr_dir!\n";
 		die;
 	}
 	print STDERR "Running intersect: bedtools intersect -a $chr_file -b $opt{'O'}.targets.bed -wa -wb\n";
@@ -174,11 +172,23 @@ foreach $target (keys %TARGET_CELLID_cov) {
 if (defined $opt{'A'}) {
 	open OUT, ">$opt{'O'}.annot.meth.txt";
 	foreach $target (keys %TARGET_ANNOT_cov) {
+		%ANNOT_meth = (); @METH = (); $mean = 0; $stdev = 0; $sum = 0; $stdev_sum = 0; $passing = 0;
 		foreach $annot (keys %{$TARGET_ANNOT_cov{$target}}) {
 			if ($TARGET_ANNOT_cov{$target}{$annot} >= $minCov) {
 				if (!defined $TARGET_ANNOT_meth{$target}{$annot}) {$TARGET_ANNOT_meth{$target}{$annot} = 0};
-				$meth = sprintf("%.2f", ($TARGET_ANNOT_meth{$target}{$annot}/$TARGET_ANNOT_cov{$target}{$annot})*100);
-				print OUT "$target\t$annot\t$meth\n";
+				$ANNOT_meth{$annot} = sprintf("%.2f", ($TARGET_ANNOT_meth{$target}{$annot}/$TARGET_ANNOT_cov{$target}{$annot})*100);
+				push @METH, $ANNOT_meth{$annot};
+				$sum += $ANNOT_meth{$annot};
+				$passing++;
+			}
+		}
+		$mean = $sum/$passing;
+		foreach $val (@METH) {$stdev_sum+=($val-$mean)**2};
+		$stdev = sqrt($stdev_sum/$passing);
+		foreach $annot (keys %{$TARGET_ANNOT_cov{$target}}) {
+			if ($TARGET_ANNOT_cov{$target}{$annot} >= $minCov) {
+				$zscore = ($ANNOT_meth{$annot}-$mean)/$stdev;
+				print OUT "$target\t$annot\t$ANNOT_meth{$annot}\t$zscore\n";
 			}
 		}
 	} close OUT;
