@@ -192,4 +192,5 @@ if (defined $opt{'A'}) {
 			}
 		}
 	} close OUT;
+	system("plotGeneByAnnot.pl $opt{'O'}.annot.meth.txt");
 }
