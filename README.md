@@ -8,6 +8,7 @@ Barnyard portion
 5) scitools barnyard-compare to get humand and mouse called cells, use read cutoff based on complexity plot
 
 Species-specific
+
 6) filter trimmed fastq files to be only human or mouse cell reads using scitools split-fastq
 7) repeat alignment, sorting, merging, and rmdup for species alignments
 8) run sciMET_extract.pl on the rmdup & filtered bam file to create context 'chrom' folders then sort it with sciMET_sortChroms.pl
