@@ -85,7 +85,7 @@ if (defined $opt{'1'} && !defined $opt{'s'}) {
 	$ts = localtime(time);
 	print LOG "$ts Name sorting read 1...\n";
 	$threads2 = $threads*2;
-	$sort1 = "samtools sort -m 8G -@ $threads2 -n $opt{'O'}.R1/*.bam > $opt{'O'}.R1.nsrt.bam 2>> $opt{'O'}.merge.log";
+	$sort1 = "samtools sort -@ $threads2 -n $opt{'O'}.R1/*.bam > $opt{'O'}.R1.nsrt.bam 2>> $opt{'O'}.merge.log";
 	print LOG "\t$sort1\n";
 	system($sort1);
 	if (defined $opt{'X'}) {
@@ -97,7 +97,7 @@ if (defined $opt{'2'} && !defined $opt{'s'}) {
 	$ts = localtime(time);
 	print LOG "$ts Name sorting read 2...\n";
 	$threads2 = $threads*2;
-	$sort2 = "samtools sort -m 8G -@ $threads2 -n $opt{'O'}.R2/*.bam > $opt{'O'}.R2.nsrt.bam 2>> $opt{'O'}.merge.log";
+	$sort2 = "samtools sort -@ $threads2 -n $opt{'O'}.R2/*.bam > $opt{'O'}.R2.nsrt.bam 2>> $opt{'O'}.merge.log";
 	print LOG "\t$sort2\n";
 	system($sort2);
 	if (defined $opt{'X'}) {
