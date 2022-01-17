@@ -13,9 +13,11 @@ Species-specific
 6) filter trimmed fastq files to be only human or mouse cell reads using scitools split-fastq
 7) repeat alignment, sorting, merging, and rmdup for species alignments
 8) run sciMET_extract.pl on the rmdup & filtered bam file to create context 'chrom' folders then sort it with sciMET_sortChroms.pl
-9) run CHmeth2mtx.pl using windows and CGmeth2mtx.pl using annotated regions with the chroms folder
-10) scitools irlba on the CH methylaiton matrix (not the ratio.mtx)
-11) remove the first dimension (head -n1 then tail -n49 to same file) and see if it improves (otherwise keep all 50)
+9) run sciMET_meth2mtx.pl using windows the chroms folder for CG and then CH (separate runs, will auto-detect)
+10) filter the CH matrix based on coverage etc... using #TBD#
+11) scitools irlba on the CH methylaiton matrix (not the ratio.mtx)
 12) run umap / matrix-pg / etc... & plot using scitools
 
 13) run getGeneMeth.pl using CH over gene bodies or CG over promoter regions uses the chroms folder from step 8 use the annot file for clusters to make aggregate methylaiton for clusters will also produce single-cell level methylation
+    this can be run with a long list of genes (use -L option) to have a file that can be plotted from
+	plot with plotGeneByAnnot.pl and it will plot all (if a smalls et was used for making the file) or a subset that can be provided

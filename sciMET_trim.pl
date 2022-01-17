@@ -13,7 +13,7 @@ $trimmomatic = "/home/users/oconneru/bin/Trimmomatic-0.38/trimmomatic-0.38.jar";
 $min_RL = 30;
 $threads = 1;
 
-getopts("O:A:1:2:T:m:t:", \%opt);
+getopts("O:A:1:2:T:m:t:e:", \%opt);
 
 $die = "
 
@@ -30,6 +30,7 @@ Options:
 -T   [STR]   Trimmomatic jar file path (def = $trimmomatic)
 -m   [INT]   Min read length (def = $min_RL)
 -t   [INT]   Threads to use (def = $threads)
+-e   [INT]   Trim bases from the end of read 2 after adapter trim (def = no)
 
 ";
 
@@ -51,6 +52,12 @@ if (defined $opt{'2'}) {
 	$trim_R2 = "java -Xmx8G -jar $trimmomatic SE -threads $threads $opt{'2'} $opt{'O'}.trimmed.R2.fq.gz ILLUMINACLIP:$adapters:2:30:10 MINLEN:$min_RL >> $opt{'O'}.trimmed.R2.log 2>> $opt{'O'}.trimmed.R2.log";
 	print STDERR "Trimming read 2. Command:\n\t$trim_R2\n";
 	system("$trim_R2");
+	if (defined $opt{'e'}) {
+		$trim_R2e = "seqtk trimfq -b 0 -e $opt{'e'} $opt{'O'}.trimmed.R2.fq.gz | gzip > $opt{'O'}.trimmed_e$opt{'e'}.R2.fq.gz";
+		print STDERR "Trimming additional $opt{'e'} from end of read 2. Command:\n\t$trim_R2e\n";
+		system("$trim_R2e");
+		#system("rm -f $opt{'O'}.trimmed.R2.fq.gz"); activate once confirmed
+	}
 }
 
 exit;
