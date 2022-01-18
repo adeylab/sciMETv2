@@ -10,7 +10,7 @@ Barnyard portion
 
 Species-specific
 
-6) filter trimmed fastq files to be only human or mouse cell reads using scitools split-fastq
+6) filter trimmed fastq files to be only human or mouse cell reads using sciMET_speciesSplit.pl
 7) repeat alignment, sorting, merging, and rmdup for species alignments
 8) run sciMET_extract.pl on the rmdup & filtered bam file to create context 'chrom' folders then sort it with sciMET_sortChroms.pl
 9) run sciMET_meth2mtx.pl using windows the chroms folder for CG and then CH (separate runs, will auto-detect)
