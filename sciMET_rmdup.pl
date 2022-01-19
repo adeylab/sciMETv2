@@ -33,13 +33,13 @@ if (!defined $opt{'O'}) {
 if (defined $opt{'q'}) {$minq = $opt{'q'}};
 if (defined $opt{'t'}) {$threads = $opt{'t'}};
 
-open OUT, "| samtools view -bSu - | samtools sort -@ $threads $opt{'O'}.TMP - > $opt{'O'}.bbrd.q10.nsrt.bam";
+open OUT, "| samtools view -bSu - | samtools sort -@ $threads -T $opt{'O'}.TMP - > $opt{'O'}.bbrd.q10.bam";
 
-open HEAD, "$samtools view -H $ARGV[0] |";
+open HEAD, "samtools view -H $ARGV[0] |";
 while ($l = <HEAD>){print OUT "$l"};
 close HEAD;
 
-open IN, "$samtools view -q $minq $ARGV[0] |";
+open IN, "samtools view -q $minq $ARGV[0] |";
 
 $currentBarc = "null";
 $total_aligned = 0;
@@ -68,9 +68,22 @@ while ($l = <IN>) {
 	# process read
 	$BARC_total{$barc}++;
 	
-	$XR = chop $P[14]; $XG = chop $P[15];
-	$coord = "$P[1].$P[2].$P[3].$XR.$XG";
 	$length = length($P[9]);
+	$XR = chop $P[14]; $XG = chop $P[15];
+	
+	# flags different w/ bismark; reads aligning to - strand of reference
+	# have the start of the sequence read as the end of the alignment.
+	# this matters if read lengths sequenced are different, where the
+	# alignment coordinate will be the end of the read.
+	
+	if ($XR eq $XG) {	# read is reference-strand and thus +
+		$start = $P[3];
+	} else {			# read is not reference strand and thus - (tag/prime site is end of alignment)
+		$start = $P[3]+$length;
+	}
+	
+	$coord = "$P[2].$start.$XR.$XG";
+	
 	
 	if (!defined $COORD_read{$coord}) {
 		$COORD_read{$coord} = $l;
