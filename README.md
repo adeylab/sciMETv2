@@ -3,10 +3,10 @@ Processing sciMET datasets (including barnyard / species spike-in)
 Barnyard portion
 1) unidex to generate demultiplexed reads as fastq files and filter to valid barcodes (scMET mode); this trims the first 10bp of
      read 1 which includes the randomer ligation region.
-3) sciMET_trim.pl - runs trimmomatic using sciMET adapters and in single-end mode; use -e 10 for most sciMETv2 modes.
+3) sciMET_trim.pl - runs trimmomatic using sciMET adapters and in single-end mode.
 4) sciMET_align.pl to align to hybrid reference which will sort & merge as well
      if files from other runs should be merged, run with -m to skip the merge and then run samtools merge with all name sorted bam files
-5) scitools rmdup - plot complexity
+5) Remove duplicates with sciMET_rmdup.pl - then scitools plot-complexity to assess complexity and cell read depth
 6) scitools barnyard-compare to get humand and mouse called cells, use read cutoff based on complexity plot
 
 Species-specific
