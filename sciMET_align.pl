@@ -2,16 +2,17 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("O:1:2:t:b:R:sXE:e:T:", \%opt);
+getopts("O:1:2:t:w:R:sXA:a:B:b:", \%opt);
 
 $hg38na = "/home/groups/oroaklab/refs/hg38/hs38d1_noalt_bismark/";
 $mm10 = "/home/groups/oroaklab/refs/mm10/bismark/";
 $hybrid = "/home/groups/oroaklab/refs/bismark_hybrid.hg19.mm10/";
 $bowtie = "/home/groups/oroaklab/src/bowtie2/bowtie2-2.3.1/";
 $threads = 1;
-$trim_rounds = 2;
-$trim_bases = 15;
-$trim_reads = 0;
+$r1_rounds = 4;
+$r2_rounds = 2;
+$r1_trim = 15;
+$r2_trim = 15;
 
 $die = "
 
@@ -38,13 +39,15 @@ Options:
               Uses ~2x this number plus another ~2 threads total
               Will use same number for sort & merge if applicable
 
--T   [0|1|2|12]  Trim and re-align unaliged reads in rounds.
-              0 = none, 1 or 2 is only read 1 or 2, 12 = both (def = $trim_reads)
--E   [INT]   Will perform the specified number of rounds. (def = $trim_rounds)
--e   [INT]   Bases to end trim per round. (def = $trim_bases)
+-A   [INT]   Number of alignment rounds for read 1 (def = $r1_rounds)
+               Note: if 0, then no alignment will be performed.
+-a   [INT]   Bases to trim for each subsequnt read 1 round (def = $r1_trim)
+-B   [INT]   Number of alignment rounds for read 2 (def = $r2_rounds)
+-b   [INT]   Bases to trim for each subsequent read 2 round (def = $r2_trim)
 
--b   [STR]   Path to bowtie2 (def = $bowtie)
+-w   [STR]   Path to bowtie2 (def = $bowtie)
 -s           Do not proceed with sorting
+-m           Do not proceed with merging (will merge if -1 and -2 are provided)
 -X           Delete intermediate files (def = keep)
 
 ";
@@ -61,7 +64,7 @@ if (!defined $opt{'R'}) {
 if (!defined $opt{'1'} && !defined $opt{'2'}) {die "\nERROR: Specify at least one read as -1 or -2\n$die"};
 if (!defined $opt{'O'}) {die "\nERROR: Specify output as -O\n$die"};
 if (defined $opt{'t'}) {$threads = $opt{'t'}};
-if (defined $opt{'b'}) {$bowtie = $opt{'b'}};
+if (defined $opt{'w'}) {$bowtie = $opt{'w'}};
 if (defined $opt{'e'}) {$trim_bases = $opt{'e'}};
 if (defined $opt{'E'}) {$trim_rounds = $opt{'E'}};
 if (defined $opt{'T'}) {$trim_reads = $opt{'T'}};
@@ -70,104 +73,90 @@ open LOG, ">$opt{'O'}.align.log";
 $ts = localtime(time);
 print LOG "$ts\tAlignemnt called.\n";
 
+
+if (-d "$opt{'O'}.bams") {
+	die "ERROR: $opt{'O'}.bams already exists! Delete or use a new output name!\n";
+}
+
+if (-d "$opt{'O'}.trim_reads") {
+	die "ERROR: $opt{'O'}.trim_reads already exists! Delete or use a new output name!\n";
+}
+
+system("mkdir $opt{'O'}.bams");
+system("mkdir $opt{'O'}.trim_reads");
+
 if (defined $opt{'1'}) {
 	$ts = localtime(time);
-	print LOG "$ts Aligning read 1, Command:\n";
-	$r1_align = "bismark --path_to_bowtie $bowtie -o $opt{'O'}.R1 --unmapped --pbat -p $threads $ref $opt{'1'} >> $opt{'O'}.R1.align.log 2>> $opt{'O'}.R1.align.log";
-	print LOG "\t$r1_align\n";
-	system($r1_align);
-	system("mv $opt{'O'}.R1/$opt{'1'}_unmapped_reads.fq.gz $opt{'O'}.R1.unmapped.fq.gz");
-	system("cat $opt{'O'}.R1/*SE_report.txt >> $opt{'O'}.alignment_stats.txt");
-	
-	if (!defined $opt{'s'}) {
-		$ts = localtime(time);
-		print LOG "$ts Name sorting read 1...\n";
-		$sort1 = "samtools sort -@ $threads -n $opt{'O'}.R1/*.bam > $opt{'O'}.R1.nsrt.bam 2>> $opt{'O'}.sort.log";
-		print LOG "\t$sort1\n";
-		system($sort1);
-		if (defined $opt{'X'}) {system("rm -f -R $opt{'O'}.R1/")};
-	}
-	
-	if ($trim_reads > 0) {
-		for ($round = 1; $round <= $trim_rounds; $round++) {
+	print LOG "$ts Aligning read 1 for $r1_rounds rounds.\n";
+	for ($round = 1; $round <= $r1_rounds; $round++) {
+		if ($round > 1) {
 			$ts = localtime(time);
-			print LOG "$ts Trimming unaligned R1 reads by $trim_bases, round $round...\n";
-			$trim = "seqtk trim -b 0 -e $trim_bases $opt{'O'}.R1.unmapped.fq.gz | gzip > $opt{'O'}.R1.unmapped.trim_$round.fq.gz";
+			print LOG "$ts Trimming unaligned R1 reads by $r1_trim, round $round...\n";
+			$prev_round = $round - 1;
+			$trim = "seqtk trim -b 0 -e $r1_trim $opt{'O'}.trim_reads/R1.$prev_round.unmapped.fq.gz > $opt{'O'}.trim_reads/R1.$prev_round.trimmed.fq";
 			print LOG "\t$trim\n";
 			system($trim);
-			system("rm -f -R $opt{'O'}.R1.unmapped.fq.gz");
-			
-			$ts = localtime(time);
-			print LOG "$ts Aligning after trim...\n";
-			$r1_align = "bismark --path_to_bowtie $bowtie -o $opt{'O'}.R1.trim_$round --unmapped --pbat -p $threads $ref $opt{'O'}.R1.unmapped.trim_$round.fq.gz >> $opt{'O'}.R1.align.log 2>> $opt{'O'}.R1.align.log";
-			print LOG "\t$r1_align\n";
-			system($r1_align);
-			system("mv $opt{'O'}.R1.trim_$round/*_unmapped_reads.fq.gz $opt{'O'}.R1.unmapped.fq.gz");
-			system("cat $opt{'O'}.R1.trim_$round/*SE_report.txt >> $opt{'O'}.alignment_stats.txt");
-			
-			if (!defined $opt{'s'}) {
-				$ts = localtime(time);
-				print LOG "$ts Name sorting read 1 trimmed, round $round...\n";
-				$sort1 = "samtools sort -@ $threads -n $opt{'O'}.R1.trim_$round/*.bam > $opt{'O'}.R1.trim_$round.nsrt.bam 2>> $opt{'O'}.sort.log";
-				print LOG "\t$sort1\n";
-				system($sort1);
-				if (defined $opt{'X'}) {system("rm -f -R $opt{'O'}.R1.trim_$round/")};
-			}
-			
+			$in_reads = "$opt{'O'}.trim_reads/R1.$prev_round.trimmed.fq";
+		} else {
+			$in_reads = "$opt{'1'}";
+		}
+		
+		$align = "bismark --path_to_bowtie $bowtie -o $opt{'O'}.R1.$round --unmapped --pbat -p $threads $ref $in_reads >> $opt{'O'}.align.log 2>> $opt{'O'}.align.log";
+		print LOG "\t$align\n";
+		system($align);
+		system("mv $opt{'O'}.R1.$round/*.bam $opt{'O'}.bams/R1.$round.bam");
+		system("mv $opt{'O'}.R1.$round/*.fq.gz $opt{'O'}.bams/R1.$round.unmapped.fq.gz");
+		system("cat $opt{'O'}.R1.$round/*SE_report.txt >> $opt{'O'}.alignment_stats.txt");
+		
+		if (defined $opt{'X'}) {system("rm -f -R $opt{'O'}.R1.$round/")};
+		
+		if (!defined $opt{'s'}) {
+			$sort = "samtools sort -@ $threads -n $opt{'O'}.bams/R1.$round.bam > $opt{'O'}.bams/R1.$round.nsrt.bam >> $opt{'O'}.align.log";
+			print LOG "\t$sort\n";
+			system($sort);
+			if (defined $opt{'X'}) {system("rm -f $opt{'O'}.bams/R1.$round.bam")};
 		}
 	}
-	if (defined $opt{'X'}) {system("rm -f $opt{'O'}.R1.align.log $opt{'O'}.sort.log")};
 }
 
 if (defined $opt{'2'}) {
 	$ts = localtime(time);
-	print LOG "$ts Aligning read 2, Command:\n";
-	$r2_align = "bismark --path_to_bowtie $bowtie -o $opt{'O'}.R2 --unmapped -p $threads $ref $opt{'2'} >> $opt{'O'}.R2.align.log 2>> $opt{'O'}.R2.align.log";
-	print LOG "\t$r2_align\n";
-	system($r2_align);
-	system("mv $opt{'O'}.R2/$opt{'2'}_unmapped_reads.fq.gz $opt{'O'}.R2.unmapped.fq.gz");
-	system("cat $opt{'O'}.R2/*SE_report.txt >> $opt{'O'}.alignment_stats.txt");
-	
-	if (!defined $opt{'s'}) {
-		$ts = localtime(time);
-		print LOG "$ts Name sorting read 2...\n";
-		$sort2 = "samtools sort -@ $threads -n $opt{'O'}.R2/*.bam > $opt{'O'}.R2.nsrt.bam 2>> $opt{'O'}.sort.log";
-		print LOG "\t$sort2\n";
-		system($sort2);
-		if (defined $opt{'X'}) {
-			system("rm -f -R $opt{'O'}.R2/");
-		}
-	}
-	
-	if ($trim_reads > 1) {
-		for ($round = 1; $round <= $trim_rounds; $round++) {
+	print LOG "$ts Aligning read 2 for $r2_rounds rounds.\n";
+	for ($round = 1; $round <= $r2_rounds; $round++) {
+		if ($round > 1) {
 			$ts = localtime(time);
-			print LOG "$ts Trimming unaligned R1 reads by $trim_bases, round $round...\n";
-			$trim = "seqtk trim -b 0 -e $trim_bases $opt{'O'}.R2.unmapped.fq.gz | gzip > $opt{'O'}.R2.unmapped.trim_$round.fq.gz";
+			print LOG "$ts Trimming unaligned R2 reads by $r2_trim, round $round...\n";
+			$prev_round = $round - 1;
+			$trim = "seqtk trim -b 0 -e $r2_trim $opt{'O'}.trim_reads/R2.$prev_round.unmapped.fq.gz > $opt{'O'}.trim_reads/R2.$prev_round.trimmed.fq";
 			print LOG "\t$trim\n";
 			system($trim);
-			system("rm -f -R $opt{'O'}.R2.unmapped.fq.gz");
-			
-			$ts = localtime(time);
-			print LOG "$ts Aligning after trim...\n";
-			$r2_align = "bismark --path_to_bowtie $bowtie -o $opt{'O'}.R2.trim_$round --unmapped --pbat -p $threads $ref $opt{'O'}.R2.unmapped.trim_$round.fq.gz >> $opt{'O'}.R2.align.log 2>> $opt{'O'}.R2.align.log";
-			print LOG "\t$r2_align\n";
-			system($r2_align);
-			system("mv $opt{'O'}.R2.trim_$round/*_unmapped_reads.fq.gz $opt{'O'}.R2.unmapped.fq.gz");
-			system("cat $opt{'O'}.R2.trim_$round/*SE_report.txt >> $opt{'O'}.alignment_stats.txt");
-			
-			if (!defined $opt{'s'}) {
-				$ts = localtime(time);
-				print LOG "$ts Name sorting read 2 trimmed, round $round...\n";
-				$sort2 = "samtools sort -@ $threads -n $opt{'O'}.R2.trim_$round/*.bam > $opt{'O'}.R2.trim_$round.nsrt.bam 2>> $opt{'O'}.sort.log";
-				print LOG "\t$sort2\n";
-				system($sort2);
-				if (defined $opt{'X'}) {system("rm -f -R $opt{'O'}.R2.trim_$round/")};
-			}
-			
+			$in_reads = "$opt{'O'}.trim_reads/R2.$prev_round.trimmed.fq";
+		} else {
+			$in_reads = "$opt{'2'}";
+		}
+		
+		$align = "bismark --path_to_bowtie $bowtie -o $opt{'O'}.R2.$round --unmapped --pbat -p $threads $ref $in_reads >> $opt{'O'}.align.log 2>> $opt{'O'}.align.log";
+		print LOG "\t$align\n";
+		system($align);
+		system("mv $opt{'O'}.R2.$round/*.bam $opt{'O'}.bams/R2.$round.bam");
+		system("mv $opt{'O'}.R2.$round/*.fq.gz $opt{'O'}.bams/R2.$round.unmapped.fq.gz");
+		system("cat $opt{'O'}.R2.$round/*SE_report.txt >> $opt{'O'}.alignment_stats.txt");
+		
+		if (defined $opt{'X'}) {system("rm -f -R $opt{'O'}.R2.$round/")};
+		
+		if (!defined $opt{'s'}) {
+			$sort = "samtools sort -@ $threads -n $opt{'O'}.bams/R2.$round.bam > $opt{'O'}.bams/R2.$round.nsrt.bam >> $opt{'O'}.align.log";
+			print LOG "\t$sort\n";
+			system($sort);
+			if (defined $opt{'X'}) {system("rm -f $opt{'O'}.bams/R2.$round.bam")};
 		}
 	}
-	if (defined $opt{'X'}) {system("rm -f $opt{'O'}.R2.align.log $opt{'O'}.sort.log")};
+}
+
+if (defined $opt{'1'} && defined $opt{'2'} && !defined $opt{'s'} && !defined $opt{'m'}) {
+	$merge = "samtools merge -@ $threads -n $opt{'O'}.nsrt.bam $opt{'O'}.bams/*.nsrt.bam 2>> $opt{'O'}.align.log";
+	print LOG "\t$merge\n";
+	system($merge);
 }
 
 exit;
