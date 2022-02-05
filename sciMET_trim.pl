@@ -56,8 +56,8 @@ if (defined $opt{'2'}) {
 	print STDERR "Trimming read 2. Command:\n\t$trim_R2\n";
 	system("$trim_R2");
 	if ($r2_trim > 0) {
-		$trim_R2e = "seqtk trimfq -b 0 -e $opt{'e'} $opt{'O'}.trimmed.R2.fq.gz | gzip > $opt{'O'}.trimmed_e.R2.fq.gz";
-		print STDERR "Trimming additional $opt{'e'} from end of read 2. Command:\n\t$trim_R2e\n";
+		$trim_R2e = "seqtk trimfq -b 0 -e $r2_trim $opt{'O'}.trimmed.R2.fq.gz | gzip > $opt{'O'}.trimmed_e.R2.fq.gz";
+		print STDERR "Trimming additional $r2_trim from end of read 2. Command:\n\t$trim_R2e\n";
 		system("$trim_R2e");
 		system("rm -f $opt{'O'}.trimmed.R2.fq.gz && mv $opt{'O'}.trimmed_e.R2.fq.gz $opt{'O'}.trimmed.R2.fq.gz");
 	}
