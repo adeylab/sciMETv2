@@ -80,18 +80,18 @@ while ($tag = <IN>) {
 		$assigned1++;
 		if ($CELLID_species{$cellID} =~ /human/) {
 			$human2++;
-			print H "$tag\t$read\n\+\n$qual\n";
+			print H "$tag\n$read\n\+\n$qual\n";
 		} elsif ($CELLID_species{$cellID} =~ /mouse/) {
 			$mouse2++;
-			print M "$tag\t$read\n\+\n$qual\n";
+			print M "$tag\n$read\n\+\n$qual\n";
 		} elsif ($CELLID_species{$cellID} =~ /mixed/) {
 			$mixed2++;
-			print X "$tag\t$read\n\+\n$qual\n";
+			print X "$tag\n$read\n\+\n$qual\n";
 		} else {
-			print U "$tag\t$read\n\+\n$qual\n";
+			print U "$tag\n$read\n\+\n$qual\n";
 		}
 	} else {
-		print U "$tag\t$read\n\+\n$qual\n";
+		print U "$tag\n$read\n\+\n$qual\n";
 	}
 } close IN;
 close H; close M; close X; close U;

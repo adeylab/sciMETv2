@@ -2,7 +2,7 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("O:1:2:t:w:R:sXA:a:B:b:m", \%opt);
+getopts("O:1:2:t:w:R:sXA:a:B:b:mk:l:", \%opt);
 
 $hg38na = "/home/groups/oroaklab/refs/hg38/hs38d1_noalt_bismark/";
 $mm10 = "/home/groups/oroaklab/refs/mm10/bismark/";
@@ -50,6 +50,12 @@ Options:
 -m           Do not proceed with merging (will merge if -1 and -2 are provided)
 -X           Delete intermediate files (def = keep)
 
+-k   [INT]   Pick up at specified read 1 alignment round
+-l   [INT]   Pick up at specified read 2 alignment round
+               Will pick up at trimming, specify the new
+               unmapped fastq file to be trimmed. Must
+               also specify a new -O.
+
 ";
 
 if (!defined $opt{'R'}) {
@@ -71,7 +77,7 @@ if (defined $opt{'T'}) {$trim_reads = $opt{'T'}};
 
 open LOG, ">$opt{'O'}.align.log";
 $ts = localtime(time);
-print LOG "$ts\tAlignemnt called.\n";
+print LOG "$ts\tAlignment called.\n";
 
 
 if (-d "$opt{'O'}.bams") {
@@ -89,11 +95,16 @@ if (defined $opt{'1'}) {
 	$ts = localtime(time);
 	print LOG "$ts Aligning read 1 for $r1_rounds rounds.\n";
 	for ($round = 1; $round <= $r1_rounds; $round++) {
+		if (defined $opt{'k'}) {$round = $opt{'k'}};
 		if ($round > 1) {
 			$ts = localtime(time);
 			print LOG "$ts Trimming unaligned R1 reads by $r1_trim, round $round...\n";
 			$prev_round = $round - 1;
-			$trim = "seqtk trimfq -b 0 -e $r1_trim $opt{'O'}.trim_reads/$opt{'O'}.R1.$prev_round.unmapped.fq.gz > $opt{'O'}.trim_reads/$opt{'O'}.R1.$prev_round.trimmed.fq";
+			if (defined $opt{'k'}) {
+				$trim = "seqtk trimfq -b 0 -e $r1_trim $opt{'1'} > $opt{'O'}.trim_reads/$opt{'O'}.R1.$prev_round.trimmed.fq";
+			} else {
+				$trim = "seqtk trimfq -b 0 -e $r1_trim $opt{'O'}.trim_reads/$opt{'O'}.R1.$prev_round.unmapped.fq.gz > $opt{'O'}.trim_reads/$opt{'O'}.R1.$prev_round.trimmed.fq";
+			}
 			print LOG "\t$trim\n";
 			system($trim);
 			$in_reads = "$opt{'O'}.trim_reads/$opt{'O'}.R1.$prev_round.trimmed.fq";
@@ -123,11 +134,16 @@ if (defined $opt{'2'}) {
 	$ts = localtime(time);
 	print LOG "$ts Aligning read 2 for $r2_rounds rounds.\n";
 	for ($round = 1; $round <= $r2_rounds; $round++) {
+		if (defined $opt{'l'}) {$round = $opt{'l'}};
 		if ($round > 1) {
 			$ts = localtime(time);
 			print LOG "$ts Trimming unaligned R2 reads by $r2_trim, round $round...\n";
 			$prev_round = $round - 1;
-			$trim = "seqtk trimfq -b 0 -e $r2_trim $opt{'O'}.trim_reads/$opt{'O'}.R2.$prev_round.unmapped.fq.gz > $opt{'O'}.trim_reads/$opt{'O'}.R2.$prev_round.trimmed.fq";
+			if (defined $opt{'l'}) {
+				$trim = "seqtk trimfq -b 0 -e $r2_trim $opt{'2'} > $opt{'O'}.trim_reads/$opt{'O'}.R2.$prev_round.trimmed.fq";
+			} else {
+				$trim = "seqtk trimfq -b 0 -e $r2_trim $opt{'O'}.trim_reads/$opt{'O'}.R2.$prev_round.unmapped.fq.gz > $opt{'O'}.trim_reads/$opt{'O'}.R2.$prev_round.trimmed.fq";
+			}
 			print LOG "\t$trim\n";
 			system($trim);
 			$in_reads = "$opt{'O'}.trim_reads/$opt{'O'}.R2.$prev_round.trimmed.fq";
