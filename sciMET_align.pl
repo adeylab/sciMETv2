@@ -183,21 +183,21 @@ while ($l = <IN>) {
 	if ($l =~ /^Bismark report for/) {
 		if ($l =~ /R1/) {$read = 1} elsif ($l =~ /R2/) {$read = 2};
 	} elsif ($l =~ /^Sequences analysed in total/) {
-		@P = split(/\s/); $num = pop(@P);
+		@P = split(/\s/, $l); $num = pop(@P);
 		if ($read == 1) {
 			if ($num > $r1_total) {$r1_total = $num};
 		} else {
 			if ($num > $r2_total) {$r2_total = $num};
 		}
 	} elsif ($l =~ /^Number of alignments with a unique/) {
-		@P = split(/\s/); $num = pop(@P);
+		@P = split(/\s/, $l); $num = pop(@P);
 		if ($read == 1) {
 			$r1_aligned += $num;
 		} else {
 			$r2_aligned += $num;
 		}
 	} elsif ($l =~ /^Total methylated C's in CpG context/) {
-		@P = split(/\s/); $num = pop(@P);
+		@P = split(/\s/, $l); $num = pop(@P);
 		if ($read == 1) {
 			$r1_mCG += $num; $all_mCG += $num;
 			$r1_CG += $num; $all_CG += $num;
@@ -206,7 +206,7 @@ while ($l = <IN>) {
 			$r2_CG += $num; $all_CG += $num;;
 		}
 	} elsif ($l =~ /^Total methylated C's in CHG context/) {
-		@P = split(/\s/); $num = pop(@P);
+		@P = split(/\s/, $l); $num = pop(@P);
 		if ($read == 1) {
 			$r1_mCHG += $num; $all_mCHG += $num;
 			$r1_CHG += $num; $all_CHG += $num;
@@ -215,7 +215,7 @@ while ($l = <IN>) {
 			$r2_CHG += $num; $all_CHG += $num;;
 		}
 	} elsif ($l =~ /^Total methylated C's in CHH context/) {
-		@P = split(/\s/); $num = pop(@P);
+		@P = split(/\s/, $l); $num = pop(@P);
 		if ($read == 1) {
 			$r1_mCHH += $num; $all_mCHH += $num;
 			$r1_CHH += $num; $all_CHH += $num;
@@ -224,21 +224,21 @@ while ($l = <IN>) {
 			$r2_CHH += $num; $all_CHH += $num;;
 		}
 	} elsif ($l =~ /^Total unmethylated C's in CpG context/) {
-		@P = split(/\s/); $num = pop(@P);
+		@P = split(/\s/, $l); $num = pop(@P);
 		if ($read == 1) {
 			$r1_CG += $num; $all_CG += $num;
 		} else {
 			$r2_CG += $num; $all_CG += $num;;
 		}
 	} elsif ($l =~ /^Total unmethylated C's in CHG context/) {
-		@P = split(/\s/); $num = pop(@P);
+		@P = split(/\s/, $l); $num = pop(@P);
 		if ($read == 1) {
 			$r1_CHG += $num; $all_CHG += $num;
 		} else {
 			$r2_CHG += $num; $all_CHG += $num;;
 		}
 	} elsif ($l =~ /^Total unmethylated C's in CHH context/) {
-		@P = split(/\s/); $num = pop(@P);
+		@P = split(/\s/, $l); $num = pop(@P);
 		if ($read == 1) {
 			$r1_CHH += $num; $all_CHH += $num;
 		} else {
@@ -258,7 +258,7 @@ $r1_mCHH_pct = sprintf("%.2f", ($r1_mCHH/$r1_CHH)*100);
 $r2_mCG_pct = sprintf("%.2f", ($r2_mCG/$r2_CG)*100);
 $r2_mCHG_pct = sprintf("%.2f", ($r2_mCHG/$r2_CHG)*100);
 $r2_mCHH_pct = sprintf("%.2f", ($r2_mCHH/$r2_CHH)*100);
-$all_mCG_pct = sprintf("%.2f", ($all_mCG/$r1_CG)*100);
+$all_mCG_pct = sprintf("%.2f", ($all_mCG/$all_CG)*100);
 $all_mCHG_pct = sprintf("%.2f", ($all_mCHG/$all_CHG)*100);
 $all_mCHH_pct = sprintf("%.2f", ($all_mCHH/$all_CHH)*100);
 open OUT, ">$opt{'O'}.compiled_alignment.txt";
