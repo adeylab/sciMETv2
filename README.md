@@ -30,3 +30,6 @@ Merging datasets:
 2) Tools that leverage the sorted chroms folder containg methylaitonc calls for cells can use a list of folders, including
    sciMET_meth2mtx.pl and getGeneMeth.pl. As long as cell names are different, it will read them all in. This can be done
    instead of merging matrixes etc.
+   
+Other tools:
+sciMET_aggAlign.pl - when there are multiple runs you can aggregate the alignment stats from the concatenated bismark align stats output.
