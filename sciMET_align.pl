@@ -249,18 +249,19 @@ while ($l = <IN>) {
 
 $all_total = $r1_total+$r2_total;
 $all_aligned = $r1_aligned+$r2_aligned;
-$all_pct = sprintf("%.2f", ($all_aligned/$all_total)*100);
-$r1_pct = sprintf("%.2f", ($r1_aligned/$r1_total)*100);
-$r2_pct = sprintf("%.2f", ($r2_aligned/$r2_total)*100);
-$r1_mCG_pct = sprintf("%.2f", ($r1_mCG/$r1_CG)*100);
-$r1_mCHG_pct = sprintf("%.2f", ($r1_mCHG/$r1_CHG)*100);
-$r1_mCHH_pct = sprintf("%.2f", ($r1_mCHH/$r1_CHH)*100);
-$r2_mCG_pct = sprintf("%.2f", ($r2_mCG/$r2_CG)*100);
-$r2_mCHG_pct = sprintf("%.2f", ($r2_mCHG/$r2_CHG)*100);
-$r2_mCHH_pct = sprintf("%.2f", ($r2_mCHH/$r2_CHH)*100);
-$all_mCG_pct = sprintf("%.2f", ($all_mCG/$all_CG)*100);
-$all_mCHG_pct = sprintf("%.2f", ($all_mCHG/$all_CHG)*100);
-$all_mCHH_pct = sprintf("%.2f", ($all_mCHH/$all_CHH)*100);
+if ($all_total < 1) {$all_pct = 0} else {$all_pct = sprintf("%.2f", ($all_aligned/$all_total)*100)};
+if ($r1_total < 1) {$r1_pct = 0} else {$r1_pct = sprintf("%.2f", ($r1_aligned/$r1_total)*100)};
+if ($r2_total < 1) {$r2_pct = 0} else {$r2_pct = sprintf("%.2f", ($r2_aligned/$r2_total)*100)};
+if ($r1_CG < 1) {$r1_mCG_pct = 0} else {$r1_mCG_pct = sprintf("%.2f", ($r1_mCG/$r1_CG)*100)};
+if ($r1_CHG < 1) {$r1_mCHG_pct = 0} else {$r1_mCHG_pct = sprintf("%.2f", ($r1_mCHG/$r1_CHG)*100)};
+if ($r1_CHH < 1) {$r1_mCHH_pct = 0} else {$r1_mCHH_pct = sprintf("%.2f", ($r1_mCHH/$r1_CHH)*100)};
+if ($r2_CG < 1) {$r2_mCG_pct = 0} else {$r2_mCG_pct = sprintf("%.2f", ($r2_mCG/$r2_CG)*100)};
+if ($r2_CHG < 1) {$r2_mCHG_pct = 0} else {$r2_mCHG_pct = sprintf("%.2f", ($r2_mCHG/$r2_CHG)*100)};
+if ($r2_CHH < 1) {$r2_mCHH_pct = 0} else {$r2_mCHH_pct = sprintf("%.2f", ($r2_mCHH/$r2_CHH)*100)};
+if ($all_CG < 1) {$all_mCG_pct = 0} else {$all_mCG_pct = sprintf("%.2f", ($all_mCG/$all_CG)*100)};
+if ($all_CHG < 1) {$all_mCHG_pct = 0} else {$all_mCHG_pct = sprintf("%.2f", ($all_mCHG/$all_CHG)*100)};
+if ($all_CHH < 1) {$all_mCHH_pct = 0} else {$all_mCHH_pct = sprintf("%.2f", ($all_mCHH/$all_CHH)*100)};
+
 open OUT, ">$opt{'O'}.compiled_alignment.txt";
 print OUT "#Compiled alignment report for $opt{'O'}
 
