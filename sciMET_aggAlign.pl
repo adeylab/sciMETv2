@@ -22,7 +22,7 @@ $all_mCG = 0; $all_mCHG = 0; $all_mCHH = 0;
 
 for ($i = 0; $i < @ARGV; $i++) {
 	$r1_file_total = 0; $r2_file_total = 0;
-	open IN, "$ARGV[0]";
+	open IN, "$ARGV[$i]";
 	while ($l = <IN>) {
 		chomp $l;
 		if ($l =~ /^Bismark report for/) {
