@@ -74,6 +74,10 @@ if (defined $opt{'w'}) {$bowtie = $opt{'w'}};
 if (defined $opt{'e'}) {$trim_bases = $opt{'e'}};
 if (defined $opt{'E'}) {$trim_rounds = $opt{'E'}};
 if (defined $opt{'T'}) {$trim_reads = $opt{'T'}};
+if (defined $opt{'A'}) {$r1_rounds = $opt{'A'}};
+if (defined $opt{'B'}) {$r2_rounds = $opt{'B'}};
+if (defined $opt{'a'}) {$r1_trim = $opt{'a'}};
+if (defined $opt{'b'}) {$r2_trim = $opt{'b'}};
 
 open LOG, ">$opt{'O'}.align.log";
 $ts = localtime(time);
