@@ -116,7 +116,7 @@ if (defined $opt{'1'}) {
 			$in_reads = "$opt{'1'}";
 		}
 		
-		$align = "bismark --path_to_bowtie $bowtie -o $opt{'O'}.R1.$round --unmapped --pbat -p $threads $ref $in_reads >> $opt{'O'}.bismark.log 2>> $opt{'O'}.bismark.log";
+		$align = "bismark --path_to_bowtie $bowtie -o $opt{'O'}.R1.$round --unmapped --pbat -p $threads $ref $in_reads >> /dev/null 2>> /dev/null";
 		print LOG "\t$align\n";
 		system($align);
 		system("mv $opt{'O'}.R1.$round/*.bam $opt{'O'}.bams/$opt{'O'}.R1.$round.bam");
@@ -155,7 +155,7 @@ if (defined $opt{'2'}) {
 			$in_reads = "$opt{'2'}";
 		}
 		
-		$align = "bismark --path_to_bowtie $bowtie -o $opt{'O'}.R2.$round --unmapped -p $threads $ref $in_reads >> $opt{'O'}.bismark.log 2>> $opt{'O'}.bismark.log";
+		$align = "bismark --path_to_bowtie $bowtie -o $opt{'O'}.R2.$round --unmapped -p $threads $ref $in_reads >> /dev/null 2>> /dev/null";
 		print LOG "\t$align\n";
 		system($align);
 		system("mv $opt{'O'}.R2.$round/*.bam $opt{'O'}.bams/$opt{'O'}.R2.$round.bam");

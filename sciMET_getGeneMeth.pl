@@ -2,7 +2,7 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("A:F:O:G:S:s:E:Vm:rL:xp", \%opt);
+getopts("A:F:O:G:S:s:E:Vm:rL:xpC:", \%opt);
 
 # defaults
 $refGene = "/home/groups/oroaklab/refs/hg38/hg38.refGene.txt";
@@ -14,7 +14,7 @@ $die = "
 
 Usage:
 
-getGeneMeth.pl -F [chromosome meth call folder] -O [output prefix / folder] [gene1] ... [chrN:#-#] ...
+sciMET_getGeneMeth.pl -F [chromosome meth call folder] -O [output prefix / folder] [gene1] ... [chrN:#-#] ...
 
 regions will be explicitly that window with no padding.
 regions must be: chr:start-end
@@ -37,6 +37,7 @@ Default Options:
 -r           Replace genes in annot methylaiton file (def = keep previous)
 -L   [STR]   Text file listing targets (can be supplemented with those listed in ARGS)
              (e.g. /home/groups/oroaklab/refs/hg38/hg38.refGene.uniqNames.txt)
+-C   [STR]   File listing CellIDs to include (def = all)
 -x           Do not print out values for individual cells (requires -A)
 -p           Plot after (def = np)
 
@@ -61,6 +62,14 @@ if (defined $opt{'s'}) {$startPad2 = $opt{'s'}};
 if (defined $opt{'m'}) {$minCov = $opt{'m'}};
 if (defined $opt{'x'} && !defined $opt{'A'}) {
 	die "ERROR: To skip individual cell plotting, an annotaiton file MUST be provided!\n$die";
+}
+
+if (defined $opt{'C'}) {
+	open IN, "$opt{'C'}";
+	while ($l = <IN>) {
+		chomp $l; $l =~ s/\s.+$//;
+		$INCLUDE{$l} = 1;
+	} close IN;
 }
 
 # read annot file
@@ -154,16 +163,18 @@ foreach $chr_dir (@FOLDERS) {
 				@P = split(/\t/, $l);
 				if (defined $opt{'V'}) {print STDERR "Intersect line: $l\n"};
 
-				$TARGET_CELLID_cov{$P[8]}{$P[3]}++;
-				if ($P[4] =~ /[XHZ]/) {
-					$TARGET_CELLID_meth{$P[8]}{$P[3]}++;
-				}
-				
-				if (defined $CELLID_annot{$P[3]}) {
-					$annot = $CELLID_annot{$P[3]};
-					$TARGET_ANNOT_cov{$P[8]}{$annot}++;
+				if (!defined $opt{'C'} || defined $INCLUDE{$P[8]}) {
+					$TARGET_CELLID_cov{$P[8]}{$P[3]}++;
 					if ($P[4] =~ /[XHZ]/) {
-						$TARGET_ANNOT_meth{$P[8]}{$annot}++;
+						$TARGET_CELLID_meth{$P[8]}{$P[3]}++;
+					}
+					
+					if (defined $CELLID_annot{$P[3]}) {
+						$annot = $CELLID_annot{$P[3]};
+						$TARGET_ANNOT_cov{$P[8]}{$annot}++;
+						if ($P[4] =~ /[XHZ]/) {
+							$TARGET_ANNOT_meth{$P[8]}{$annot}++;
+						}
 					}
 				}
 			} close INT;

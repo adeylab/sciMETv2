@@ -9,10 +9,10 @@ $height = 4;
 
 $die = "
 
-plotGeneByAnnot.pl (options) geneByAnnot.meth.txt
+sciMET_plotGeneByAnnot.pl (options) geneByAnnot.meth.txt
 
 Will make a dotplot of targets x annotations from the file
-produced by getGeneMeth.pl
+produced by sciMET_getGeneMeth.pl
 
 If 1 or more gene/target names are provided it will plot only those.
 

@@ -2,7 +2,7 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("F:L:O:B:", \%opt);
+getopts("F:C:O:B:", \%opt);
 
 #defaults
 
@@ -19,7 +19,7 @@ Options:
 -B   [STR]   Bed file of windows for computing methylation (req)
 -O   [STR]   Output prefix (req)
 
--L   [STR]   File of list of passing cellIDs (will filter to them)
+-C   [STR]   File of list of passing cellIDs (will filter to them)
 
 ";
 
@@ -30,8 +30,8 @@ if (!defined $opt{'F'} ||
 	!defined $opt{'B'}) {die $die};
 
 
-if (defined $opt{'L'}) {
-	open IN, "$opt{'L'}";
+if (defined $opt{'C'}) {
+	open IN, "$opt{'C'}";
 	while ($l = <IN>) {
 		chomp $l;
 		$l =~ s/\s.+$//;
@@ -82,7 +82,7 @@ foreach $chr_dir (@FOLDERS) {
 				chomp $l;
 				@P = split(/\t/, $l);
 				$cellID = $P[3];
-				if (!defined $opt{'L'} || defined $PASSING_CELLS{$cellID}) {
+				if (!defined $opt{'C'} || defined $PASSING_CELLS{$cellID}) {
 					$winName = "$P[5]_$P[6]_$P[7]";
 					$winID = $WINNAME_winID{$winName};
 					if (!defined $WINID_totalCov{$winID}) {
