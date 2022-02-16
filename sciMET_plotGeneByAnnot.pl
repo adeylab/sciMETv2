@@ -24,6 +24,7 @@ Options:
    
    -G   [LST]   Comma-separated list of genes
    -A   [LST]   Comma-separated list of annotations
+                 For -G and -A, will plot in specified order
    
 ";
 
@@ -73,14 +74,28 @@ if (defined $opt{'G'} || defined $opt{'A'}) {
 	$infile = $ARGV[0];
 }
 
+if (defined $opt{'G'}) {
+	$order_genes = "IN\$V1 <- factor(IN\$V1, levels = c(";
+	for ($i = (@GENE_LIST-1); $i >= 0; $i--) {
+		$order_genes .= "\"$GENE_LIST[$i]\",";
+	} $order_genes =~ s/,$//; $order_genes .= "))";
+} else {$order_genes = ""};
+
+if (defined $opt{'A'}) {
+	$order_clust = "IN\$V2 <- factor(IN\$V2, levels = c(";
+	for ($i = 0; $i < @ANNOT_LIST; $i++) {
+		$order_clust .= "\"$ANNOT_LIST[$i]\",";
+	} $order_clust =~ s/,$//; $order_clust .= "))";
+} else {$order_clust = ""};
+
 if (!defined $opt{'H'}) { #CG colors / scaling
 open R, ">$opt{'O'}.plot.r";
 print R "library(ggplot2)
 IN<-read.table(\"$infile\")
+$order_clust
+$order_genes
 PLT<-ggplot(data=IN) + theme_bw() +
 	 geom_point(aes(V2,V1,size=V3,color=V4)) +
-	 #scale_color_distiller(palette = \"Spectral\") +
-	 #scale_color_viridis_c() +
 	 scale_color_gradient2(low=\"#ff0082\", mid=\"#bdbdbd\", high=\"#08519c\") +
 	 xlab(\"Cluster\") + ylab(\"Gene\") + labs(color=\"z-score\",size=\"mCG\")
 ggsave(plot=PLT,filename=\"$opt{'O'}.png\",width=$width,height=$height)
@@ -90,6 +105,8 @@ ggsave(plot=PLT,filename=\"$opt{'O'}.pdf\",width=$width,height=$height)
 open R, ">$opt{'O'}.plot.r";
 print R "library(ggplot2)
 IN<-read.table(\"$infile\")
+$order_clust
+$order_genes
 PLT<-ggplot(data=IN) + theme_bw() +
 	 geom_point(aes(V2,V1,size=V3,color=V4)) +
 	 scale_color_gradient2(low=\"#08519c\", mid=\"#bdbdbd\", high=\"#49e679\") +

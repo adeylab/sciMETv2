@@ -254,7 +254,7 @@ if (defined $opt{'A'}) {
 		if ($passing >= 3) {
 			$mean = $sum/$passing;
 			foreach $val (@METH) {$stdev_sum+=abs($val-$mean)**2};
-			$stdev = sqrt($stdev_sum/$passing);
+			$stdev = sqrt($stdev_sum/($passing-1));
 			if ($stdev>0) {
 				foreach $annot (keys %{$TARGET_ANNOT_cov{$target}}) {
 					if ($TARGET_ANNOT_cov{$target}{$annot} >= $minCov) {
