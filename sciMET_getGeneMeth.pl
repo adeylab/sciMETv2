@@ -2,7 +2,7 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("A:F:O:G:S:s:E:Vm:rL:xpC:", \%opt);
+getopts("A:F:O:G:S:s:E:Vm:rL:xpC:a:", \%opt);
 
 # defaults
 $refGene = "/home/groups/oroaklab/refs/hg38/hg38.refGene.txt";
@@ -29,6 +29,7 @@ Required options:
 Default Options:
 
 -A   [STR]   Annot file - will aggregate over clusters as well as cell-based
+-a   [STR]   List of annotations to include, comma-separated. Excludes all other cells.
 -G   [STR]   RefGene file (def = $refGene)
 -S   [STR]   Bases from the start of TSS to begin window (def = $startPad, if -s suggested: 5000)
 -s   [STR]   Bases from the end of TSS to end window (for CG; def = null, overrides -E, suggested: 2500)
@@ -81,6 +82,14 @@ if (defined $opt{'A'}) {
 		$CELLID_annot{$cellID} = $annot;
 		$ANNOT_ct{$annot}++;
 	} close IN;
+}
+
+if (defined $opt{'a'}) {
+	if (!defined $opt{'A'}) {die "\nERROR: -a annotaiton list requires an annotation file!\n$die"};
+	@ANNOT_LIST = split(/,/, $opt{'a'});
+	foreach $annot (@ANNOT_LIST) {
+		$ANNOT_include{$annot} = 1;
+	}
 }
 
 # pull targets to a bed:
@@ -164,17 +173,21 @@ foreach $chr_dir (@FOLDERS) {
 				if (defined $opt{'V'}) {print STDERR "Intersect line: $l\n"};
 
 				if (!defined $opt{'C'} || defined $INCLUDE{$P[8]}) {
-					$TARGET_CELLID_cov{$P[8]}{$P[3]}++;
-					if ($P[4] =~ /[XHZ]/) {
-						$TARGET_CELLID_meth{$P[8]}{$P[3]}++;
-					}
-					
-					if (defined $CELLID_annot{$P[3]}) {
-						$annot = $CELLID_annot{$P[3]};
-						$TARGET_ANNOT_cov{$P[8]}{$annot}++;
+					if (!defined $opt{'a'} || defined $ANNOT_include{$CELLID_annot{$P[3]}}) {
+						$TARGET_CELLID_cov{$P[8]}{$P[3]}++;
 						if ($P[4] =~ /[XHZ]/) {
-							$TARGET_ANNOT_meth{$P[8]}{$annot}++;
+							$TARGET_CELLID_meth{$P[8]}{$P[3]}++;
 						}
+						
+						if (defined $CELLID_annot{$P[3]}) {
+							$annot = $CELLID_annot{$P[3]};
+							if (!defined $opt{'a'} || defined $ANNOT_include{$annot}) {
+								$TARGET_ANNOT_cov{$P[8]}{$annot}++;
+								if ($P[4] =~ /[XHZ]/) {
+									$TARGET_ANNOT_meth{$P[8]}{$annot}++;
+								}
+							}
+					}
 					}
 				}
 			} close INT;
