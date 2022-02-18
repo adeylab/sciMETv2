@@ -109,7 +109,7 @@ $order_clust
 $order_genes
 PLT<-ggplot(data=IN) + theme_bw() +
 	 geom_point(aes(V2,V1,size=V3,color=V4)) +
-	 scale_color_gradient2(low=\"#08519c\", mid=\"#bdbdbd\", high=\"#49e679\") +
+	 scale_color_gradient2(low=\"#49e679\", mid=\"#bdbdbd\", high=\"#08519c\") +
 	 xlab(\"Cluster\") + ylab(\"Gene\") + labs(color=\"z-score\",size=\"mCH\")
 ggsave(plot=PLT,filename=\"$opt{'O'}.png\",width=$width,height=$height)
 ggsave(plot=PLT,filename=\"$opt{'O'}.pdf\",width=$width,height=$height)
