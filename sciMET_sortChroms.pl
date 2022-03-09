@@ -21,7 +21,7 @@ run the command itself.
 
 if (!defined $ARGV[0]) {die $die};
 
-$command = "for f in $ARGV[0]/*.bed.gz; do zcat \$f | sort -k1,1 -k2,2n | gzip > \$f.srt && rm -f \$f && mv \$f.srt \$f & done";
+$command = "for f in $ARGV[0]/*.bed.gz; do zcat \$f | sort -k2,2n | gzip > \$f.srt && rm -f \$f && mv \$f.srt \$f & done";
 
 print STDERR "Command:\n\t$command\n";
 

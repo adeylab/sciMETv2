@@ -33,7 +33,7 @@ if (!defined $opt{'O'}) {
 if (defined $opt{'q'}) {$minq = $opt{'q'}};
 if (defined $opt{'t'}) {$threads = $opt{'t'}};
 
-open OUT, "| samtools view -bSu - | samtools sort -@ $threads -T $opt{'O'}.TMP - > $opt{'O'}.bbrd.q10.bam";
+open OUT, "| samtools view -bSu - | samtools sort -@ $threads -T $opt{'O'}.TMP -m 4G - > $opt{'O'}.bbrd.q10.bam";
 
 open HEAD, "samtools view -H $ARGV[0] |";
 while ($l = <HEAD>){print OUT "$l"};
