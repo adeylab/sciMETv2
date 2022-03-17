@@ -17,11 +17,13 @@ Prints the command to copy/paste.
 If 'run' is specified as a second argumnet, will
 run the command itself.
 
+Once complete, remove the non gzipped bed files.
+
 ";
 
 if (!defined $ARGV[0]) {die $die};
 
-$command = "for f in $ARGV[0]/*.bed.gz; do zcat \$f | sort -k2,2n | gzip > \$f.srt && rm -f \$f && mv \$f.srt \$f & done";
+$command = "for f in $ARGV[0]/*.bed; do cat \$f | sort -k2,2n | gzip > $f.gz & done";
 
 print STDERR "Command:\n\t$command\n";
 
