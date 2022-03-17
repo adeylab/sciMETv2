@@ -2,7 +2,7 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("L:O:m:Xt:C:H:bM:N:", \%opt);
+getopts("L:O:m:Xt:C:H:bN:", \%opt);
 
 #defaults
 $minSize = 10000000;
@@ -38,9 +38,6 @@ Options:
       If EITHER -H or -C is provided, then bismark extract
       will be skipped and only chrom extract and sorting
       will be performed with the provided file.
-	  
--M   [FLT]   Maximum mCH value to include cell in final
-              extraction (def = $mCH_max)
 
 -N   [INT]   Number of cells per chroms folder. (def = $cells_per_folder)
               If there are more cells than this value, it will
@@ -124,11 +121,13 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	$CONTEXT_total{'x'}=0;
 	
 	$folderID = sprintf("%03d", 1); $folderCT = 0; %CELLID_folderID = (); %HANDLES = ();
+	%FOLDERID_cellIDs = ();
+	@{$FOLDERID_cellIDs{$folderID}} = ();
 	system("mkdir $opt{'O'}.CH.$folderID.chroms");
 	foreach $chrom (keys %CHROMS) {
 		$handle = $folderID.$CHROMS{$chrom};
 		$HANDLES{$handle} = 1;
-		open $handle, "| gzip > $opt{'O'}.CH.$folderID.chroms/$chrom.bed.gz";
+		open $handle, ">$opt{'O'}.CH.$folderID.chroms/$chrom.bed";
 	}
 
 	if (defined $opt{'H'}) {
@@ -154,8 +153,8 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		if (!defined $CELLID_folderID{$cellID}) {
 			$folderCT++;
 			if ($folderCT > $cells_per_folder) { # new folder
-				open FOLDER_LIST "$opt{'O'}.CH.$folderID.cellIDs.txt";
-				foreach $printID @{$FOLDERID_cellIDs{$folderID}} {
+				open FOLDER_LIST, ">$opt{'O'}.CH.$folderID.cellIDs.txt";
+				foreach $printID (@{$FOLDERID_cellIDs{$folderID}}) {
 					print FOLDER_LIST "$printID\n";
 				} close FOLDER_LIST;
 				$folderCT = 1;
@@ -166,7 +165,7 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				foreach $chrom (keys %CHROMS) {
 					$handle = $folderID.$CHROMS{$chrom};
 					$HANDLES{$handle} = 1;
-					open $handle, "| gzip > $opt{'O'}.CH.$folderID.chroms/$chrom.bed.gz";
+					open $handle, ">$opt{'O'}.CH.$folderID.chroms/$chrom.bed";
 				}
 			} else {
 				$CELLID_folderID{$cellID} = $folderID;
@@ -199,6 +198,12 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	foreach $handle (keys %HANDLES) {
 		close $handle;
 	}
+	
+	# print last folder cell list
+	open FOLDER_LIST, ">$opt{'O'}.CH.$folderID.cellIDs.txt";
+	foreach $printID (@{$FOLDERID_cellIDs{$folderID}}) {
+		print FOLDER_LIST "$printID\n";
+	} close FOLDER_LIST;
 
 	open VALS, ">$opt{'O'}.mCH.vals";
 	open COV, ">$opt{'O'}.CH_cov.vals";
@@ -223,11 +228,13 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	$CONTEXT_total{'z'}=0;
 
 	$folderID = sprintf("%03d", 1); $folderCT = 0; %CELLID_folderID = (); %HANDLES = ();
+	%FOLDERID_cellIDs = ();
+	@{$FOLDERID_cellIDs{$folderID}} = ();
 	system("mkdir $opt{'O'}.CG.$folderID.chroms");
 	foreach $chrom (keys %CHROMS) {
 		$handle = $folderID.$CHROMS{$chrom};
 		$HANDLES{$handle} = 1;
-		open $handle, "| gzip > $opt{'O'}.CG.$folderID.chroms/$chrom.bed.gz";
+		open $handle, ">$opt{'O'}.CG.$folderID.chroms/$chrom.bed";
 	}
 	
 
@@ -254,8 +261,8 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		if (!defined $CELLID_folderID{$cellID}) {
 			$folderCT++;
 			if ($folderCT > $cells_per_folder) { # new folder
-				open FOLDER_LIST "$opt{'O'}.CG.$folderID.cellIDs.txt";
-				foreach $printID @{$FOLDERID_cellIDs{$folderID}} {
+				open FOLDER_LIST, ">$opt{'O'}.CG.$folderID.cellIDs.txt";
+				foreach $printID (@{$FOLDERID_cellIDs{$folderID}}) {
 					print FOLDER_LIST "$printID\n";
 				} close FOLDER_LIST;
 				$folderCT = 1;
@@ -266,7 +273,7 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				foreach $chrom (keys %CHROMS) {
 					$handle = $folderID.$CHROMS{$chrom};
 					$HANDLES{$handle} = 1;
-					open $handle, "| gzip > $opt{'O'}.CG.$folderID.chroms/$chrom.bed.gz";
+					open $handle, ">$opt{'O'}.CG.$folderID.chroms/$chrom.bed";
 				}
 			} else {
 				$CELLID_folderID{$cellID} = $folderID;
@@ -296,6 +303,12 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	foreach $handle (keys %HANDLES) {
 		close $handle;
 	}
+	
+	# print last folder cell list
+	open FOLDER_LIST, ">$opt{'O'}.CG.$folderID.cellIDs.txt";
+	foreach $printID (@{$FOLDERID_cellIDs{$folderID}}) {
+		print FOLDER_LIST "$printID\n";
+	} close FOLDER_LIST;
 
 	open VALS, ">$opt{'O'}.mCG.vals";
 	open COV, ">$opt{'O'}.CG_cov.vals";
