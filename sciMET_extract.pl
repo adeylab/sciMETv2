@@ -2,11 +2,13 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("L:O:m:Xt:C:H:bs", \%opt);
+getopts("L:O:m:Xt:C:H:bM:N:", \%opt);
 
 #defaults
 $minSize = 10000000;
 $threads = 1;
+$mCH_max = 10;
+$cells_per_folder = 100;
 
 $die = "
 Usage:
@@ -23,8 +25,6 @@ Options:
 -m   [INT]   Minimum chromosome size to retain (def = $minSize)
               Used to exclude random and other small contigs.
 -t   [INT]   Threads for extraction (def = $threads)
--s           Sort the chrom files. This will take substantially
-              longer to run. (def = no sort)
 
 -b           Only run the bismark extract portion.
 
@@ -38,6 +38,16 @@ Options:
       If EITHER -H or -C is provided, then bismark extract
       will be skipped and only chrom extract and sorting
       will be performed with the provided file.
+	  
+-M   [FLT]   Maximum mCH value to include cell in final
+              extraction (def = $mCH_max)
+
+-N   [INT]   Number of cells per chroms folder. (def = $cells_per_folder)
+              If there are more cells than this value, it will
+              produce multiple folders, each with the specified
+              number of cells. This keeps files smaller and allows
+              for better parallelization for downstream functions.
+              Cells in folders will not match between CG and CH.
               
 -X           Delete intermediate files (def = keep)
 
@@ -60,6 +70,8 @@ if (defined $opt{'L'}) {
 	} close IN;
 }
 
+if (defined $opt{'N'}) {$cells_per_folder = $opt{'N'}};
+if (defined $opt{'M'}) {$mCH_max = $opt{'M'}};
 if (defined $opt{'m'}) {$minSize = $opt{'m'}};
 if (defined $opt{'t'}) {$threads = $opt{'t'}};
 
@@ -110,15 +122,13 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	$CONTEXT_total{'h'}=0;
 	$CONTEXT_total{'X'}=0;
 	$CONTEXT_total{'x'}=0;
-
-	system("mkdir $opt{'O'}.CH.chroms");
+	
+	$folderID = sprintf("%03d", 1); $folderCT = 0; %CELLID_folderID = (); %HANDLES = ();
+	system("mkdir $opt{'O'}.CH.$folderID.chroms");
 	foreach $chrom (keys %CHROMS) {
-		$handle = $CHROMS{$chrom};
-		if (!defined $opt{'s'}) {
-			open $handle, "| gzip > $opt{'O'}.CH.chroms/$chrom.bed.gz";
-		} else {
-			open $handle, "| sort -k 1,1 -k2,2n | gzip > $opt{'O'}.CH.chroms/$chrom.bed.gz";
-		}
+		$handle = $folderID.$CHROMS{$chrom};
+		$HANDLES{$handle} = 1;
+		open $handle, "| gzip > $opt{'O'}.CH.$folderID.chroms/$chrom.bed.gz";
 	}
 
 	if (defined $opt{'H'}) {
@@ -140,9 +150,27 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		}
 		@P = split(/\t/, $l);
 		$cellID = $P[0]; $cellID =~ s/:.+$//;
+		
+		if (!defined $CELLID_folderID{$cellID}) {
+			$folderCT++;
+			if ($folderCT > $cells_per_folder) { # new folder
+				$folderCT = 1;
+				$folderID++;
+				$CELLID_folderID{$cellID} = $folderID;
+				system("mkdir $opt{'O'}.CH.$folderID.chroms");
+				foreach $chrom (keys %CHROMS) {
+					$handle = $folderID.$CHROMS{$chrom};
+					$HANDLES{$handle} = 1;
+					open $handle, "| gzip > $opt{'O'}.CH.$folderID.chroms/$chrom.bed.gz";
+				}
+			} else {
+				$CELLID_folderID{$cellID} = $folderID;
+			}
+		}
+		
 		if (!defined $opt{'L'} || defined $PASSING_CELLS{$cellID}) {
 			if (defined $CHROMS{$P[2]}) {
-				$handle = $CHROMS{$P[2]};
+				$handle = $CELLID_folderID{$cellID}.$CHROMS{$P[2]};
 				print $handle "$P[2]\t$P[3]\t$P[3]\t$cellID\t$P[4]\n";
 				
 				if (!defined $CELLID_totalCHcov{$cellID}) {
@@ -161,8 +189,8 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		}
 	} close IN;
 
-	foreach $chrom (keys %CHROMS) {
-		$handle = $CHROMS{$chrom};
+	
+	foreach $handle (keys %HANDLES) {
 		close $handle;
 	}
 
@@ -188,15 +216,14 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	$CONTEXT_total{'Z'}=0;
 	$CONTEXT_total{'z'}=0;
 
-	system("mkdir $opt{'O'}.CG.chroms");
+	$folderID = sprintf("%03d", 1); $folderCT = 0; %CELLID_folderID = (); %HANDLES = ();
+	system("mkdir $opt{'O'}.CG.$folderID.chroms");
 	foreach $chrom (keys %CHROMS) {
-		$handle = $CHROMS{$chrom};
-		if (!defined $opt{'s'}) {
-			open $handle, "| gzip > $opt{'O'}.CG.chroms/$chrom.bed.gz";
-		} else {
-			open $handle, "| sort -k 1,1 -k2,2n | gzip > $opt{'O'}.CG.chroms/$chrom.bed.gz";
-		}
+		$handle = $folderID.$CHROMS{$chrom};
+		$HANDLES{$handle} = 1;
+		open $handle, "| gzip > $opt{'O'}.CG.$folderID.chroms/$chrom.bed.gz";
 	}
+	
 
 	if (defined $opt{'C'}) {
 		$CG_file = $opt{'C'};
@@ -219,7 +246,7 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		$cellID = $P[0]; $cellID =~ s/:.+$//;
 		if (!defined $opt{'L'} || defined $PASSING_CELLS{$cellID}) {
 			if (defined $CHROMS{$P[2]}) {
-				$handle = $CHROMS{$P[2]};
+				$handle = $CELLID_folderID{$cellID}.$CHROMS{$P[2]};
 				print $handle "$P[2]\t$P[3]\t$P[3]\t$cellID\t$P[4]\n";
 				
 				if (!defined $CELLID_totalCGcov{$cellID}) {
@@ -236,8 +263,7 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		}
 	} close IN;
 
-	foreach $chrom (keys %CHROMS) {
-		$handle = $CHROMS{$chrom};
+	foreach $handle (keys %HANDLES) {
 		close $handle;
 	}
 
