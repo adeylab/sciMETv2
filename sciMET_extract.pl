@@ -154,9 +154,14 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		if (!defined $CELLID_folderID{$cellID}) {
 			$folderCT++;
 			if ($folderCT > $cells_per_folder) { # new folder
+				open FOLDER_LIST "$opt{'O'}.CH.$folderID.cellIDs.txt";
+				foreach $printID @{$FOLDERID_cellIDs{$folderID}} {
+					print FOLDER_LIST "$printID\n";
+				} close FOLDER_LIST;
 				$folderCT = 1;
 				$folderID++;
 				$CELLID_folderID{$cellID} = $folderID;
+				push @{$FOLDERID_cellIDs{$folderID}}, $cellID;
 				system("mkdir $opt{'O'}.CH.$folderID.chroms");
 				foreach $chrom (keys %CHROMS) {
 					$handle = $folderID.$CHROMS{$chrom};
@@ -165,6 +170,7 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				}
 			} else {
 				$CELLID_folderID{$cellID} = $folderID;
+				push @{$FOLDERID_cellIDs{$folderID}}, $cellID;
 			}
 		}
 		
@@ -244,6 +250,30 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		}
 		@P = split(/\t/, $l);
 		$cellID = $P[0]; $cellID =~ s/:.+$//;
+		
+		if (!defined $CELLID_folderID{$cellID}) {
+			$folderCT++;
+			if ($folderCT > $cells_per_folder) { # new folder
+				open FOLDER_LIST "$opt{'O'}.CG.$folderID.cellIDs.txt";
+				foreach $printID @{$FOLDERID_cellIDs{$folderID}} {
+					print FOLDER_LIST "$printID\n";
+				} close FOLDER_LIST;
+				$folderCT = 1;
+				$folderID++;
+				$CELLID_folderID{$cellID} = $folderID;
+				push @{$FOLDERID_cellIDs{$folderID}}, $cellID;
+				system("mkdir $opt{'O'}.CG.$folderID.chroms");
+				foreach $chrom (keys %CHROMS) {
+					$handle = $folderID.$CHROMS{$chrom};
+					$HANDLES{$handle} = 1;
+					open $handle, "| gzip > $opt{'O'}.CG.$folderID.chroms/$chrom.bed.gz";
+				}
+			} else {
+				$CELLID_folderID{$cellID} = $folderID;
+				push @{$FOLDERID_cellIDs{$folderID}}, $cellID;
+			}
+		}
+		
 		if (!defined $opt{'L'} || defined $PASSING_CELLS{$cellID}) {
 			if (defined $CHROMS{$P[2]}) {
 				$handle = $CELLID_folderID{$cellID}.$CHROMS{$P[2]};
