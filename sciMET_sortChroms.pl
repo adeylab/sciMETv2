@@ -23,7 +23,7 @@ Once complete, remove the non gzipped bed files.
 
 if (!defined $ARGV[0]) {die $die};
 
-$command = "for f in $ARGV[0]/*.bed; do cat \$f | sort -k2,2n | gzip > $f.gz & done";
+$command = "for f in $ARGV[0]/*.bed; do cat \$f | sort -k2,2n | gzip > \$f.gz & done";
 
 print STDERR "Command:\n\t$command\n";
 
