@@ -1,8 +1,9 @@
 #!/usr/bin/perl
 
 use Getopt::Std; %opt = ();
+use List::Util qw(shuffle);
 
-getopts("L:O:m:Xt:C:H:bN:", \%opt);
+getopts("L:O:m:Xt:C:H:bN:G:", \%opt);
 
 #defaults
 $minSize = 10000000;
@@ -22,6 +23,9 @@ Options:
 
 -O   [STR]   Output prefix (def = bam prefix)
 -L   [STR]   File of list of passing cellIDs (will filter to them)
+              Also used to pre-set cells to folders which will make
+              them more uniform in size. (recommended)
+                       !!!! NOT YET FULLY IMPLEMENTED
 -m   [INT]   Minimum chromosome size to retain (def = $minSize)
               Used to exclude random and other small contigs.
 -t   [INT]   Threads for extraction (def = $threads)
@@ -38,6 +42,9 @@ Options:
       If EITHER -H or -C is provided, then bismark extract
       will be skipped and only chrom extract and sorting
       will be performed with the provided file.
+	  
+-G   [BED]   Bed file of GpCs - will create additional folders
+             for GpC or HpC contexts.
 
 -N   [INT]   Number of cells per chroms folder. (def = $cells_per_folder)
               If there are more cells than this value, it will
@@ -63,8 +70,22 @@ if (defined $opt{'L'}) {
 	while ($l = <IN>) {
 		chomp $l;
 		$l =~ s/\s.+$//;
-		$PASSING_CELLS{$l} = 1;
+		push @CELLS, $l;
 	} close IN;
+	%PASSING_CELLS = ();
+	@CELLS = shuffle(@CELLS);
+	$folderID = sprintf("%03d", 1); $folderCT = 1;
+	open OUT, ">$opt{'O'}.cellID_folderID.annot";
+	foreach $cellID (@CELLS) {
+		$folderCT++;
+		if ($folderCT > $cells_per_folder) {
+			$folderCT = 1; $folderID++;
+		}
+		$PASSING_CELLS{$cellID} = $folderID;
+		print OUT "$cellID\t$folderID\n";
+	}
+	$last_folder = $folderID;
+	close OUT;
 }
 
 if (defined $opt{'N'}) {$cells_per_folder = $opt{'N'}};
@@ -107,6 +128,19 @@ while ($l = <HEADER>) {
 $ts = localtime(time);
 print LOG "$ts\tFound $chromCT chromosomes that met min size requirement.\n";
 
+if (defined $opt{'G'}) {
+	if ($opt{'G'} =~ /gz$/) {
+		open GC, "zcat $opt{'G'} |";
+	} else {
+		open GC, "$opt{'G'}";
+	}
+	while ($l = <GC>) {
+		chomp $l;
+		($chrom,$start,$end,$strand) = split(/\t/, $l);
+		$GPC_CHR_POS{$chrom}{$start} = $strand;
+		$inGpC++;
+	} close GC;
+}
 
 if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	$ts = localtime(time);
@@ -123,11 +157,53 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	$folderID = sprintf("%03d", 1); $folderCT = 0; %CELLID_folderID = (); %HANDLES = ();
 	%FOLDERID_cellIDs = ();
 	@{$FOLDERID_cellIDs{$folderID}} = ();
-	system("mkdir $opt{'O'}.CH.$folderID.chroms");
-	foreach $chrom (keys %CHROMS) {
-		$handle = $folderID.$CHROMS{$chrom};
-		$HANDLES{$handle} = 1;
-		open $handle, ">$opt{'O'}.CH.$folderID.chroms/$chrom.bed";
+	
+	if (defined $opt{'L'}) {
+		foreach $cellID (keys %PASSING_CELLS) {
+			$CELLID_folderID{$cellID} = $PASSING_CELLS{$cellID};
+		}
+		for ($id = 1; $id <= $last_folder; $id++) {
+			if (defined $opt{'G'}) {
+				system("mkdir $opt{'O'}.HCH.$folderID.chroms");
+				system("mkdir $opt{'O'}.GCH.$folderID.chroms");
+				foreach $chrom (keys %CHROMS) {
+					$handle = $folderID.$CHROMS{$chrom}."H";
+					$HANDLES{$handle} = 1;
+					open $handle, ">$opt{'O'}.HCH.$folderID.chroms/$chrom.bed";
+					$handle = $folderID.$CHROMS{$chrom}."G";
+					$HANDLES{$handle} = 1;
+					open $handle, ">$opt{'O'}.GCH.$folderID.chroms/$chrom.bed";
+				}
+			} else {
+				system("mkdir $opt{'O'}.CH.$folderID.chroms");
+				foreach $chrom (keys %CHROMS) {
+					$handle = $folderID.$CHROMS{$chrom};
+					$HANDLES{$handle} = 1;
+					open $handle, ">$opt{'O'}.CH.$folderID.chroms/$chrom.bed";
+				}
+			}
+			$folderID++;
+		}
+	} else {
+		if (defined $opt{'G'}) {
+			system("mkdir $opt{'O'}.HCH.$folderID.chroms");
+			system("mkdir $opt{'O'}.GCH.$folderID.chroms");
+			foreach $chrom (keys %CHROMS) {
+				$handle = $folderID.$CHROMS{$chrom}."H";
+				$HANDLES{$handle} = 1;
+				open $handle, ">$opt{'O'}.HCH.$folderID.chroms/$chrom.bed";
+				$handle = $folderID.$CHROMS{$chrom}."G";
+				$HANDLES{$handle} = 1;
+				open $handle, ">$opt{'O'}.GCH.$folderID.chroms/$chrom.bed";
+			}
+		} else {
+			system("mkdir $opt{'O'}.CH.$folderID.chroms");
+			foreach $chrom (keys %CHROMS) {
+				$handle = $folderID.$CHROMS{$chrom};
+				$HANDLES{$handle} = 1;
+				open $handle, ">$opt{'O'}.CH.$folderID.chroms/$chrom.bed";
+			}
+		}
 	}
 
 	if (defined $opt{'H'}) {
@@ -150,7 +226,7 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		@P = split(/\t/, $l);
 		$cellID = $P[0]; $cellID =~ s/:.+$//;
 		
-		if (!defined $CELLID_folderID{$cellID}) {
+		if (!defined $CELLID_folderID{$cellID} && !defined $opt{'L'}) {
 			$folderCT++;
 			if ($folderCT > $cells_per_folder) { # new folder
 				open FOLDER_LIST, ">$opt{'O'}.CH.$folderID.cellIDs.txt";
@@ -161,12 +237,27 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				$folderID++;
 				$CELLID_folderID{$cellID} = $folderID;
 				push @{$FOLDERID_cellIDs{$folderID}}, $cellID;
-				system("mkdir $opt{'O'}.CH.$folderID.chroms");
-				foreach $chrom (keys %CHROMS) {
-					$handle = $folderID.$CHROMS{$chrom};
-					$HANDLES{$handle} = 1;
-					open $handle, ">$opt{'O'}.CH.$folderID.chroms/$chrom.bed";
+				
+				if (defined $opt{'G'}) {
+					system("mkdir $opt{'O'}.HCH.$folderID.chroms");
+					system("mkdir $opt{'O'}.GCH.$folderID.chroms");
+					foreach $chrom (keys %CHROMS) {
+						$handle = $folderID.$CHROMS{$chrom}."H";
+						$HANDLES{$handle} = 1;
+						open $handle, ">$opt{'O'}.HCH.$folderID.chroms/$chrom.bed";
+						$handle = $folderID.$CHROMS{$chrom}."G";
+						$HANDLES{$handle} = 1;
+						open $handle, ">$opt{'O'}.GCH.$folderID.chroms/$chrom.bed";
+					}
+				} else {
+					system("mkdir $opt{'O'}.CH.$folderID.chroms");
+					foreach $chrom (keys %CHROMS) {
+						$handle = $folderID.$CHROMS{$chrom};
+						$HANDLES{$handle} = 1;
+						open $handle, ">$opt{'O'}.CH.$folderID.chroms/$chrom.bed";
+					}
 				}
+				
 			} else {
 				$CELLID_folderID{$cellID} = $folderID;
 				push @{$FOLDERID_cellIDs{$folderID}}, $cellID;
@@ -175,7 +266,15 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		
 		if (!defined $opt{'L'} || defined $PASSING_CELLS{$cellID}) {
 			if (defined $CHROMS{$P[2]}) {
-				$handle = $CELLID_folderID{$cellID}.$CHROMS{$P[2]};
+				if (defined $opt{'G'}) {
+					if (defined $GPC_CHR_POS{$P[2]}{$P[3]}) {
+						$handle = $CELLID_folderID{$cellID}.$CHROMS{$P[2]}."G";
+					} else {
+						$handle = $CELLID_folderID{$cellID}.$CHROMS{$P[2]}."H";
+					}
+				} else {
+					$handle = $CELLID_folderID{$cellID}.$CHROMS{$P[2]};
+				}
 				print $handle "$P[2]\t$P[3]\t$P[3]\t$cellID\t$P[4]\n";
 				
 				if (!defined $CELLID_totalCHcov{$cellID}) {
@@ -190,6 +289,12 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				}
 				$CELLID_CONTEXT_cov{$cellID}{$P[4]}++;
 				$CONTEXT_total{$P[4]}++;
+				
+				if (defined $GPC_CHR_POS{$P[2]}{$P[3]}) {
+					$CELLID_GCH_cov{$cellID}++;
+					$CELLID_GCH_context_cov{$cellID}{$P[4]}++;
+					$GCH_CONTEXT_total{$P[4]}++;
+				}
 			}
 		}
 	} close IN;
@@ -200,10 +305,30 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	}
 	
 	# print last folder cell list
-	open FOLDER_LIST, ">$opt{'O'}.CH.$folderID.cellIDs.txt";
-	foreach $printID (@{$FOLDERID_cellIDs{$folderID}}) {
-		print FOLDER_LIST "$printID\n";
-	} close FOLDER_LIST;
+	if (!defined $opt{'L'}) {
+		open FOLDER_LIST, ">$opt{'O'}.CH.$folderID.cellIDs.txt";
+		foreach $printID (@{$FOLDERID_cellIDs{$folderID}}) {
+			print FOLDER_LIST "$printID\n";
+		} close FOLDER_LIST;
+	}
+	
+	if (defined $opt{'L'}) {
+		open GC_VALS, ">$opt{'O'}.GmCH.vals";
+		open HC_VALS, ">$opt{'O'}.HmCH.vals";
+		open GC_COV, ">$opt{'O'}.GCH_cov.vals";
+		open HC_COV, ">$opt{'O'}.HCH_cov.vals";
+		foreach $cellID (keys %CELLID_totalCGcov) {
+			# GCH first
+			$meth = sprintf("%.3f", (($CELLID_GCH_context_cov{$cellID}{'H'}+$CELLID_GCH_context_cov{$cellID}{'X'})/$CELLID_GCH_cov{$cellID})*100);
+			print GC_VALS "$cellID\t$meth\n";
+			print GC_COV "$cellID\t$CELLID_GCH_cov{$cellID}\n";
+			# HCG next
+			$HC_cov = ($CELLID_totalCGcov{$cellID}-$CELLID_GCH_cov{$cellID});
+			$meth = sprintf("%.3f", ((($CELLID_CONTEXT_cov{$cellID}{'H'}-$CELLID_GCH_context_cov{$cellID}{'H'})+($CELLID_CONTEXT_cov{$cellID}{'X'}-$CELLID_GCH_context_cov{$cellID}{'X'}))/$HC_cov)*100);
+			print HC_VALS "$cellID\t$meth\n";
+			print HC_COV "$cellID\t$HC_cov\n";
+		} close GC_VALS; close GC_COV; close HC_VALS; close HC_COV;
+	}
 
 	open VALS, ">$opt{'O'}.mCH.vals";
 	open COV, ">$opt{'O'}.CH_cov.vals";
@@ -230,11 +355,53 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	$folderID = sprintf("%03d", 1); $folderCT = 0; %CELLID_folderID = (); %HANDLES = ();
 	%FOLDERID_cellIDs = ();
 	@{$FOLDERID_cellIDs{$folderID}} = ();
-	system("mkdir $opt{'O'}.CG.$folderID.chroms");
-	foreach $chrom (keys %CHROMS) {
-		$handle = $folderID.$CHROMS{$chrom};
-		$HANDLES{$handle} = 1;
-		open $handle, ">$opt{'O'}.CG.$folderID.chroms/$chrom.bed";
+	
+	if (defined $opt{'L'}) {
+		foreach $cellID (keys %PASSING_CELLS) {
+			$CELLID_folderID{$cellID} = $PASSING_CELLS{$cellID};
+		}
+		for ($id = 1; $id <= $last_folder; $id++) {
+			if (defined $opt{'G'}) {
+				system("mkdir $opt{'O'}.HCG.$folderID.chroms");
+				system("mkdir $opt{'O'}.GCG.$folderID.chroms");
+				foreach $chrom (keys %CHROMS) {
+					$handle = $folderID.$CHROMS{$chrom}."H";
+					$HANDLES{$handle} = 1;
+					open $handle, ">$opt{'O'}.HCG.$folderID.chroms/$chrom.bed";
+					$handle = $folderID.$CHROMS{$chrom}."G";
+					$HANDLES{$handle} = 1;
+					open $handle, ">$opt{'O'}.GCG.$folderID.chroms/$chrom.bed";
+				}
+			} else {
+				system("mkdir $opt{'O'}.CG.$folderID.chroms");
+				foreach $chrom (keys %CHROMS) {
+					$handle = $folderID.$CHROMS{$chrom};
+					$HANDLES{$handle} = 1;
+					open $handle, ">$opt{'O'}.CG.$folderID.chroms/$chrom.bed";
+				}
+			}
+			$folderID++;
+		}
+	} else {
+		if (defined $opt{'G'}) {
+			system("mkdir $opt{'O'}.HCG.$folderID.chroms");
+			system("mkdir $opt{'O'}.GCG.$folderID.chroms");
+			foreach $chrom (keys %CHROMS) {
+				$handle = $folderID.$CHROMS{$chrom}."H";
+				$HANDLES{$handle} = 1;
+				open $handle, ">$opt{'O'}.HCG.$folderID.chroms/$chrom.bed";
+				$handle = $folderID.$CHROMS{$chrom}."G";
+				$HANDLES{$handle} = 1;
+				open $handle, ">$opt{'O'}.GCG.$folderID.chroms/$chrom.bed";
+			}
+		} else {
+			system("mkdir $opt{'O'}.CH.$folderID.chroms");
+			foreach $chrom (keys %CHROMS) {
+				$handle = $folderID.$CHROMS{$chrom};
+				$HANDLES{$handle} = 1;
+				open $handle, ">$opt{'O'}.CG.$folderID.chroms/$chrom.bed";
+			}
+		}
 	}
 	
 
@@ -258,7 +425,7 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		@P = split(/\t/, $l);
 		$cellID = $P[0]; $cellID =~ s/:.+$//;
 		
-		if (!defined $CELLID_folderID{$cellID}) {
+		if (!defined $CELLID_folderID{$cellID} && !defined $opt{'L'}) {
 			$folderCT++;
 			if ($folderCT > $cells_per_folder) { # new folder
 				open FOLDER_LIST, ">$opt{'O'}.CG.$folderID.cellIDs.txt";
@@ -269,11 +436,24 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				$folderID++;
 				$CELLID_folderID{$cellID} = $folderID;
 				push @{$FOLDERID_cellIDs{$folderID}}, $cellID;
-				system("mkdir $opt{'O'}.CG.$folderID.chroms");
-				foreach $chrom (keys %CHROMS) {
-					$handle = $folderID.$CHROMS{$chrom};
-					$HANDLES{$handle} = 1;
-					open $handle, ">$opt{'O'}.CG.$folderID.chroms/$chrom.bed";
+				if (defined $opt{'G'}) {
+					system("mkdir $opt{'O'}.HCG.$folderID.chroms");
+					system("mkdir $opt{'O'}.GCG.$folderID.chroms");
+					foreach $chrom (keys %CHROMS) {
+						$handle = $folderID.$CHROMS{$chrom}."H";
+						$HANDLES{$handle} = 1;
+						open $handle, ">$opt{'O'}.HCG.$folderID.chroms/$chrom.bed";
+						$handle = $folderID.$CHROMS{$chrom}."G";
+						$HANDLES{$handle} = 1;
+						open $handle, ">$opt{'O'}.GCG.$folderID.chroms/$chrom.bed";
+					}
+				} else {
+					system("mkdir $opt{'O'}.CG.$folderID.chroms");
+					foreach $chrom (keys %CHROMS) {
+						$handle = $folderID.$CHROMS{$chrom};
+						$HANDLES{$handle} = 1;
+						open $handle, ">$opt{'O'}.CG.$folderID.chroms/$chrom.bed";
+					}
 				}
 			} else {
 				$CELLID_folderID{$cellID} = $folderID;
@@ -283,7 +463,15 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		
 		if (!defined $opt{'L'} || defined $PASSING_CELLS{$cellID}) {
 			if (defined $CHROMS{$P[2]}) {
-				$handle = $CELLID_folderID{$cellID}.$CHROMS{$P[2]};
+				if (defined $opt{'G'}) {
+					if (defined $GPC_CHR_POS{$P[2]}{$P[3]}) {
+						$handle = $CELLID_folderID{$cellID}.$CHROMS{$P[2]}."G";
+					} else {
+						$handle = $CELLID_folderID{$cellID}.$CHROMS{$P[2]}."H";
+					}
+				} else {
+					$handle = $CELLID_folderID{$cellID}.$CHROMS{$P[2]};
+				}
 				print $handle "$P[2]\t$P[3]\t$P[3]\t$cellID\t$P[4]\n";
 				
 				if (!defined $CELLID_totalCGcov{$cellID}) {
@@ -296,6 +484,12 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				}
 				$CELLID_CONTEXT_cov{$cellID}{$P[4]}++;
 				$CONTEXT_total{$P[4]}++;
+				
+				if (defined $GPC_CHR_POS{$P[2]}{$P[3]}) {
+					$CELLID_GCG_cov{$cellID}++;
+					$CELLID_GCG_context_cov{$cellID}{$P[4]}++;
+					$GCG_CONTEXT_total{$P[4]}++;
+				}
 			}
 		}
 	} close IN;
@@ -305,11 +499,31 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	}
 	
 	# print last folder cell list
-	open FOLDER_LIST, ">$opt{'O'}.CG.$folderID.cellIDs.txt";
-	foreach $printID (@{$FOLDERID_cellIDs{$folderID}}) {
-		print FOLDER_LIST "$printID\n";
-	} close FOLDER_LIST;
+	if (!defined $opt{'L'}) {
+		open FOLDER_LIST, ">$opt{'O'}.CG.$folderID.cellIDs.txt";
+		foreach $printID (@{$FOLDERID_cellIDs{$folderID}}) {
+			print FOLDER_LIST "$printID\n";
+		} close FOLDER_LIST;
+	}
 
+	if (defined $opt{'L'}) {
+		open GC_VALS, ">$opt{'O'}.GmCG.vals";
+		open HC_VALS, ">$opt{'O'}.HmCG.vals";
+		open GC_COV, ">$opt{'O'}.GCG_cov.vals";
+		open HC_COV, ">$opt{'O'}.HCG_cov.vals";
+		foreach $cellID (keys %CELLID_totalCGcov) {
+			# GCG first
+			$meth = sprintf("%.3f", ($CELLID_GCG_context_cov{$cellID}{'Z'}/$CELLID_GCG_cov{$cellID})*100);
+			print GC_VALS "$cellID\t$meth\n";
+			print GC_COV "$cellID\t$CELLID_GCG_cov{$cellID}\n";
+			# HCG next
+			$HC_cov = ($CELLID_totalCGcov{$cellID}-$CELLID_GCG_cov{$cellID});
+			$meth = sprintf("%.3f", (($CELLID_CONTEXT_cov{$cellID}{'Z'}-$CELLID_GCG_context_cov{$cellID}{'Z'})/$HC_cov)*100);
+			print HC_VALS "$cellID\t$meth\n";
+			print HC_COV "$cellID\t$HC_cov\n";
+		} close GC_VALS; close GC_COV; close HC_VALS; close HC_COV;
+	}
+	
 	open VALS, ">$opt{'O'}.mCG.vals";
 	open COV, ">$opt{'O'}.CG_cov.vals";
 	foreach $cellID (keys %CELLID_totalCGcov) {
