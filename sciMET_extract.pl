@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 
 use Getopt::Std; %opt = ();
-use List::Util qw(shuffle);
 
 getopts("L:O:m:Xt:C:H:bN:G:", \%opt);
 
@@ -73,7 +72,13 @@ if (defined $opt{'L'}) {
 		push @CELLS, $l;
 	} close IN;
 	%PASSING_CELLS = ();
-	@CELLS = shuffle(@CELLS);
+	
+	# direct implement shuffle
+    for ($i = @CELLS; -- $i;) {
+        my $r = int rand (1 + $i);
+        @CELLS [$i, $r] = @CELLS [$r, $i] unless $r == $i;
+    }
+	
 	$folderID = sprintf("%03d", 1); $folderCT = 1;
 	open OUT, ">$opt{'O'}.cellID_folderID.annot";
 	foreach $cellID (@CELLS) {
