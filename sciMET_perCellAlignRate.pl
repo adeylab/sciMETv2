@@ -2,7 +2,11 @@
 
 $die = "
 
-sciMET_perCellAlignRate.pl [read 1 or 2 fastq file(s), post-trim - can be comma separated] [aligned bam file, pre-rmdup] [list fo cellIDs to include] [output file]
+sciMET_perCellAlignRate.pl \
+	[read 1 AND 2 fastq file(s), post-trim - can be comma separated OR files from trim output on R1 and R2 stats - also comma sep; can be a mix] \
+	[aligned bam file, pre-rmdup] \
+	[list fo cellIDs to include] \
+	[output file]
 
 Calculate per-cell alignment rates.
 
@@ -19,14 +23,27 @@ while ($l = <IN>) {
 
 @FQS = split(/,/, $ARGV[0]);
 foreach $fq (@FQS) {
-	open IN, "zcat $fq |";
-	while ($tag = <IN>) {
-		chomp $tag; $tag =~ s/^@//; $tag =~ s/:.+$//;
-		if (defined $CELLS_ct{$tag}) {
-			$CELLS_ct{$tag}++;
+	if ($fq =~ /gz$/) { # gzipped fastq
+		open IN, "zcat $fq |";
+		while ($tag = <IN>) {
+			chomp $tag; $tag =~ s/^@//; $tag =~ s/:.+$//;
+			if (defined $CELLS_ct{$tag}) {
+				$CELLS_ct{$tag}++;
+			}
+			$null = <IN>; $null = <IN>; $null = <IN>;
+		} close IN;
+	} elsif ($fq =~ /txt$/) {
+		open IN, "$fq";
+		while ($l = <IN>) {
+			chomp $l;
+			($barc,$raw,$trim,$pct) = split(/\t/, $l);
+			if (defined $CELLS_ct{$barc}) {
+				$CELLS_ct{$barc}+=$trim;
+			}
 		}
-		$null = <IN>; $null = <IN>; $null = <IN>;
-	} close IN;
+	} else {
+		print STDERR "ERROR: Cannot determine file type of $fq - skipping\n";
+	}
 }
 
 open IN, "samtools view $ARGV[1] |";
