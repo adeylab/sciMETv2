@@ -322,13 +322,13 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		open HC_VALS, ">$opt{'O'}.HmCH.vals";
 		open GC_COV, ">$opt{'O'}.GCH_cov.vals";
 		open HC_COV, ">$opt{'O'}.HCH_cov.vals";
-		foreach $cellID (keys %CELLID_totalCGcov) {
+		foreach $cellID (keys %CELLID_totalCHcov) {
 			# GCH first
 			$meth = sprintf("%.3f", (($CELLID_GCH_context_cov{$cellID}{'H'}+$CELLID_GCH_context_cov{$cellID}{'X'})/$CELLID_GCH_cov{$cellID})*100);
 			print GC_VALS "$cellID\t$meth\n";
 			print GC_COV "$cellID\t$CELLID_GCH_cov{$cellID}\n";
 			# HCG next
-			$HC_cov = ($CELLID_totalCGcov{$cellID}-$CELLID_GCH_cov{$cellID});
+			$HC_cov = ($CELLID_totalCHcov{$cellID}-$CELLID_GCH_cov{$cellID});
 			$meth = sprintf("%.3f", ((($CELLID_CONTEXT_cov{$cellID}{'H'}-$CELLID_GCH_context_cov{$cellID}{'H'})+($CELLID_CONTEXT_cov{$cellID}{'X'}-$CELLID_GCH_context_cov{$cellID}{'X'}))/$HC_cov)*100);
 			print HC_VALS "$cellID\t$meth\n";
 			print HC_COV "$cellID\t$HC_cov\n";
@@ -400,7 +400,7 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				open $handle, ">$opt{'O'}.GCG.$folderID.chroms/$chrom.bed";
 			}
 		} else {
-			system("mkdir $opt{'O'}.CH.$folderID.chroms");
+			system("mkdir $opt{'O'}.CG.$folderID.chroms");
 			foreach $chrom (keys %CHROMS) {
 				$handle = $folderID.$CHROMS{$chrom};
 				$HANDLES{$handle} = 1;
