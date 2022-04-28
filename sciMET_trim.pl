@@ -46,12 +46,37 @@ if (defined $opt{'t'}) {$threads = $opt{'t'}};
 if (defined $opt{'e'}) {$r2_trim = $opt{'e'}};
 
 if (defined $opt{'1'}) {
+	%BARC_IN_ct = (); %BARC_OUT_ct = ();
+	open IN, "zcat $opt{'1'} |"
+	while ($tag = <IN>) {
+		chomp $tag; $tag =~ s/^@//; $tag =~ s/:.+$//;
+		$BARC_IN_ct{$tag}++;
+		$null = <IN>; $null = <IN>; $null = <IN>;
+	} close IN;
 	$trim_R1 = "java -Xmx8G -jar $trimmomatic SE -threads $threads $opt{'1'} $opt{'O'}.trimmed.R1.fq.gz ILLUMINACLIP:$adapters:2:30:10 MINLEN:$min_RL >> $opt{'O'}.trimmed.R1.log 2>> $opt{'O'}.trimmed.R1.log";
 	print STDERR "Trimming read 1. Command:\n\t$trim_R1\n";
 	system("$trim_R1");
+	open IN, "zcat $opt{'O'}.trimmed.R1.fq.gz |"
+	while ($tag = <IN>) {
+		chomp $tag; $tag =~ s/^@//; $tag =~ s/:.+$//;
+		$BARC_OUT_ct{$tag}++;
+		$null = <IN>; $null = <IN>; $null = <IN>;
+	} close IN;
+	open OUT ">$opt{'O'}.trimmed.R1.stats.txt";
+	foreach $barc (keys %BARC_IN_ct) {
+		$pct = sprintf("%.2f", ($BARC_OUT_ct{$barc}/$BARC_IN_ct{$barc})*100);
+		print OUT "$barc\t$BARC_IN_ct{$barc}\t$BARC_OUT_ct{$barc}\t$pct\n";
+	} close OUT;
 }
 
 if (defined $opt{'2'}) {
+	%BARC_IN_ct = (); %BARC_OUT_ct = ();
+	open IN, "zcat $opt{'2'} |"
+	while ($tag = <IN>) {
+		chomp $tag; $tag =~ s/^@//; $tag =~ s/:.+$//;
+		$BARC_IN_ct{$tag}++;
+		$null = <IN>; $null = <IN>; $null = <IN>;
+	} close IN;
 	$trim_R2 = "java -Xmx8G -jar $trimmomatic SE -threads $threads $opt{'2'} $opt{'O'}.trimmed.R2.fq.gz ILLUMINACLIP:$adapters:2:30:10 MINLEN:$min_RL >> $opt{'O'}.trimmed.R2.log 2>> $opt{'O'}.trimmed.R2.log";
 	print STDERR "Trimming read 2. Command:\n\t$trim_R2\n";
 	system("$trim_R2");
@@ -61,6 +86,17 @@ if (defined $opt{'2'}) {
 		system("$trim_R2e");
 		system("rm -f $opt{'O'}.trimmed.R2.fq.gz && mv $opt{'O'}.trimmed_e.R2.fq.gz $opt{'O'}.trimmed.R2.fq.gz");
 	}
+	open IN, "zcat $opt{'O'}.trimmed.R2.fq.gz |"
+	while ($tag = <IN>) {
+		chomp $tag; $tag =~ s/^@//; $tag =~ s/:.+$//;
+		$BARC_OUT_ct{$tag}++;
+		$null = <IN>; $null = <IN>; $null = <IN>;
+	} close IN;
+	open OUT ">$opt{'O'}.trimmed.R2.stats.txt";
+	foreach $barc (keys %BARC_IN_ct) {
+		$pct = sprintf("%.2f", ($BARC_OUT_ct{$barc}/$BARC_IN_ct{$barc})*100);
+		print OUT "$barc\t$BARC_IN_ct{$barc}\t$BARC_OUT_ct{$barc}\t$pct\n";
+	} close OUT;
 }
 
 exit;
