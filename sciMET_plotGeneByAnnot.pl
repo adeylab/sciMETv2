@@ -97,7 +97,8 @@ $order_genes
 PLT<-ggplot(data=IN) + theme_bw() +
 	 geom_point(aes(V2,V1,size=V3,color=V4)) +
 	 scale_color_gradient2(low=\"#ff0082\", mid=\"#bdbdbd\", high=\"#08519c\") +
-	 xlab(\"Cluster\") + ylab(\"Gene\") + labs(color=\"z-score\",size=\"mCG\")
+	 xlab(\"Cluster\") + ylab(\"Gene\") + labs(color=\"z-score\",size=\"mCG\") +
+	 theme(axis.text.x = element_text(angle=90,hjust=0))
 ggsave(plot=PLT,filename=\"$opt{'O'}.png\",width=$width,height=$height)
 ggsave(plot=PLT,filename=\"$opt{'O'}.pdf\",width=$width,height=$height)
 "; close R;
@@ -110,7 +111,8 @@ $order_genes
 PLT<-ggplot(data=IN) + theme_bw() +
 	 geom_point(aes(V2,V1,size=V3,color=V4)) +
 	 scale_color_gradient2(low=\"#49e679\", mid=\"#bdbdbd\", high=\"#08519c\") +
-	 xlab(\"Cluster\") + ylab(\"Gene\") + labs(color=\"z-score\",size=\"mCH\")
+	 xlab(\"Cluster\") + ylab(\"Gene\") + labs(color=\"z-score\",size=\"mCH\") +
+	 theme(axis.text.x = element_text(angle=90,hjust=0))
 ggsave(plot=PLT,filename=\"$opt{'O'}.png\",width=$width,height=$height)
 ggsave(plot=PLT,filename=\"$opt{'O'}.pdf\",width=$width,height=$height)
 "; close R;
