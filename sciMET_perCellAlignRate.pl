@@ -4,7 +4,7 @@ $die = "
 
 sciMET_perCellAlignRate.pl \
 	[read 1 AND 2 fastq file(s), post-trim - can be comma separated OR files from trim output on R1 and R2 stats - also comma sep; can be a mix] \
-	[aligned bam file, pre-rmdup] \
+	[aligned bam file(s), pre-rmdup OR complexity.txt file(s), can be comma separated an a mix of types] \
 	[list fo cellIDs to include] \
 	[output file]
 
@@ -46,15 +46,31 @@ foreach $fq (@FQS) {
 	}
 }
 
-open IN, "samtools view $ARGV[1] |";
-while ($l = <IN>) {
-	chomp $l;
-	@P = split(/\t/, $l);
-	$barc = $P[0]; $barc =~ s/:.+//;
-	if (defined $CELLS_ct{$barc}) {
-		$CELLS_aln{$barc}++;
+@BAMS = split(/,/, $ARGV[1]);
+foreach $bam (@BAMS) {
+	if ($bam =~ /bam$/) {
+		open IN, "samtools view $bam |";
+		while ($l = <IN>) {
+			chomp $l;
+			@P = split(/\t/, $l);
+			$barc = $P[0]; $barc =~ s/:.+//;
+			if (defined $CELLS_ct{$barc}) {
+				$CELLS_aln{$barc}++;
+			}
+		} close IN;
+	} elsif ($bam =~ /complexity/) {
+		open IN, "$bam";
+		while ($l = <IN>) {
+			chomp $l;
+			($num,$barc,$aln,$uniq,$pct) = split(/\t/, $l);
+			if (defined $CELLS_ct{$barc}) {
+				$CELLS_aln{$barc}+=$aln;
+			}
+		}
+	} else {
+		print STDERR "ERROR: Cannot determine bam vs complexity for $bam! skipping!\n";
 	}
-} close IN;
+}
 
 open OUT, ">$ARGV[3]";
 foreach $cellID (keys %CELLS_aln) {
