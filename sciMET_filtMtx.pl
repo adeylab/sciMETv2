@@ -118,7 +118,7 @@ while ($l = <IN>) {
 open OUT, ">$opt{'O'}.cellIDs.txt";
 foreach ($i = 0; $i < @CELLS; $i++) {
 	if (defined $CELLID_pass{$CELLS[$i]}) {
-		print OUT "$cellID\n";
+		print OUT "$CELLS[$i]\n";
 	}
 } close OUT;
 

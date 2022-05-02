@@ -33,7 +33,12 @@ for ($i = 1; $i < @ARGV; $i++) {
 		($annot,$in_mtx) = split(/,/, $ARGV[$i]);
 		$ID_annot{$i} = $annot;
 	} else {
-		$in_mtx = $ARGV[$i];
+		if ($ARGV[$i] =~ /,/) {
+			($annot,$in_mtx) = split(/,/, $ARGV[$i]);
+			$ID_annot{$i} = $annot;
+		} else {
+			$in_mtx = $ARGV[$i];
+		}
 	}
 	open $i, "$in_mtx";
 	$l = <$i>;
@@ -42,7 +47,9 @@ for ($i = 1; $i < @ARGV; $i++) {
 		@CELLS = split(/\t/, $l);
 		for ($j = 0; $j < @CELLS; $j++) {
 			$header_out .= "$ID_annot{$i}_$CELLS[$j]\t";
-			print ANNOT "$ID_annot{$i}_$CELLS[$j]\t$ID_annot{$i}\n";
+			if (defined $out_annot) {
+				print ANNOT "$ID_annot{$i}_$CELLS[$j]\t$ID_annot{$i}\n";
+			}
 		}
 	} else {
 		$header_out .= $l."\t";
