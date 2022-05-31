@@ -2,7 +2,7 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("O:t:q:", \%opt);
+getopts("O:t:q:pr:", \%opt);
 
 $threads = 1;
 $minq = 10;
@@ -18,6 +18,9 @@ Options:
    -O   [STR]   Output prefix (def = input bam prefix)
    -t   [INT]   Threads for the sorting process. (def = $threads)
    -q   [INT]   Min read alignment quality (def = $minq)
+   -p           Plot after running (req scitools cli callable)
+   -r   [STR]   Report plot to specified slack channel
+                 (Requires -p and slack as cli callable)
    
 ";
 
@@ -92,3 +95,11 @@ foreach $barc (sort {$BARC_kept{$b}<=>$BARC_kept{$a}} keys %BARC_kept) {
 	print OUT "$rank\t$barc\t$BARC_total{$barc}\t$BARC_kept{$barc}\t$pct\n";
 	$rank++;
 } close OUT;
+
+if (defined $opt{'p'}) {
+	system("scitools plot-complexity -y 7 $opt{'O'}.complexity.txt >/dev/null 2>/dev/null");
+}
+
+if (defined $opt{'r'}) {
+	system("slack -F $opt{'O'}.complexity.png $opt{'r'} >/dev/null 2>/dev/null");
+}

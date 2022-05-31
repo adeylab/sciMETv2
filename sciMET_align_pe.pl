@@ -74,7 +74,7 @@ $ts = localtime(time);
 print LOG "$ts\tDone.\n";
 
 if (defined $opt{'r'}) {
-	system("slack -F $opt{'O'}.align_report.txt $opt{'r'}");
+	system("slack -F $opt{'O'}.align_report.txt $opt{'r'} >/dev/null 2>/dev/null");
 }
 
 exit;
