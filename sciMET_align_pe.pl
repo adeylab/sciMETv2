@@ -60,7 +60,7 @@ system("$pe_align_call");
 system("mv $opt{'O'}/*.bam $opt{'O'}.unsorted.bam");
 
 if (!defined $opt{'s'}) {
-	$sort = "samtools sort -@ $threads -n $opt{'O'}.unsorted.bam > $opt{'O'}.nsrt.bam 2>> $opt{'O'}.align.log";
+	$sort = "samtools sort -T $opt{'O'}.TMP -m 4G -@ $threads -n $opt{'O'}.unsorted.bam > $opt{'O'}.nsrt.bam 2>> $opt{'O'}.align.log";
 	$ts = localtime(time);
 	print LOG "$ts\tSorting.\n";
 	system("$sort");
