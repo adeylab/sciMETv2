@@ -2,7 +2,7 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("O:1:2:t:R:s", \%opt);
+getopts("O:1:2:t:R:sr:", \%opt);
 
 $hg38na = "/home/groups/oroaklab/refs/hg38/hs38d1_noalt_bismark/";
 $mm10 = "/home/groups/oroaklab/refs/mm10/bismark/";
@@ -34,6 +34,8 @@ Options:
               Will use same number for sort. (def = $threads)
 
 -s           Do not proceed with sorting
+-r   [STR]   Report alignment stats to slack channel
+              Requires 'slack' as cli callable
 
 ";
 
@@ -58,6 +60,8 @@ $pe_align_call = "bismark --pbat -p $threads --local --unmapped -o $opt{'O'} $re
 print LOG "Command: $pe_align_call\n";
 system("$pe_align_call");
 system("mv $opt{'O'}/*.bam $opt{'O'}.unsorted.bam");
+system("mv $opt{'O'}/*_report.txt $opt{'O'}.align_report.txt");
+
 
 if (!defined $opt{'s'}) {
 	$sort = "samtools sort -T $opt{'O'}.TMP -m 4G -@ $threads -n $opt{'O'}.unsorted.bam > $opt{'O'}.nsrt.bam 2>> $opt{'O'}.align.log";
@@ -68,5 +72,9 @@ if (!defined $opt{'s'}) {
 
 $ts = localtime(time);
 print LOG "$ts\tDone.\n";
+
+if (defined $opt{'r'}) {
+	system("slack -F $opt{'O'}.align_report.txt $opt{'r'}");
+}
 
 exit;
