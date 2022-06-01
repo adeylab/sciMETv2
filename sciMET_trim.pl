@@ -61,25 +61,29 @@ if (!defined $opt{'D'}) {
 	if (!defined $opt{'1'} || !defined $opt{'2'}) {die "\nERROR: For trim glaore mode, reads 1 and 2 must be specified.\n$die"};
 	
 	if (defined $opt{'u'}) {
-		$trim_command = "trim_galore -a CTATCTCTTATA -a2 AGATCGGAAGAGC --three_prime_clip_R2 $r2_trim -j $threads --paired --retain_unpaired $opt{'1'} $opt{'2'}";
+		$trim_command = "trim_galore -a CTATCTCTTATA -a2 AGATCGGAAGAGC --three_prime_clip_R2 $r2_trim -j $threads --paired --retain_unpaired $opt{'1'} $opt{'2'} >> $opt{'O'}.trim.log 2>> $opt{'O'}.trim.log";
 	} else {
-		$trim_command = "trim_galore -a CTATCTCTTATA -a2 AGATCGGAAGAGC --three_prime_clip_R2 $r2_trim -j $threads --paired $opt{'1'} $opt{'2'}";
+		$trim_command = "trim_galore -a CTATCTCTTATA -a2 AGATCGGAAGAGC --three_prime_clip_R2 $r2_trim -j $threads --paired $opt{'1'} $opt{'2'} >> $opt{'O'}.trim.log 2>> $opt{'O'}.trim.log";
 	}
 	system($trim_command);
 	
 	# rename to output prefix names
 	$out1 = $opt{'1'}; $out1 =~ s/\.fq\.gz$//; $out1 .= "_val_1.fq.gz";
 	$out2 = $opt{'2'}; $out2 =~ s/\.fq\.gz$//; $out2 .= "_val_2.fq.gz";
-	$out1u = $opt{'1'}; $out1u =~ s/\.fq\.gz$//; $out1u .= "_unpaired_1.fq.gz";
-	$out2u = $opt{'2'}; $out2u =~ s/\.fq\.gz$//; $out2u .= "_unpaired_2.fq.gz";
+	if  (defined $opt{'u'}) {
+		$out1u = $opt{'1'}; $out1u =~ s/\.fq\.gz$//; $out1u .= "_unpaired_1.fq.gz";
+		$out2u = $opt{'2'}; $out2u =~ s/\.fq\.gz$//; $out2u .= "_unpaired_2.fq.gz";
+	}
 	
 	system("mv $out1 $opt{'O'}.trimmed.paired.R1.fq.gz");
 	system("mv $out2 $opt{'O'}.trimmed.paired.R2.fq.gz");
-	system("mv $out1u $opt{'O'}.trimmed.unpaired.R1.fq.gz");
-	system("mv $out2u $opt{'O'}.trimmed.unpaired.R2.fq.gz");
+	if (defined $opt{'u'}) {
+		system("mv $out1u $opt{'O'}.trimmed.unpaired.R1.fq.gz");
+		system("mv $out2u $opt{'O'}.trimmed.unpaired.R2.fq.gz");
+	}
 	
 	# write trimming complete file to note further processing can happen
-	system("date > trim.complete");
+	system("date > $opt{'O'}.trim.complete");
 	
 	if (defined $opt{'r'}) {
 		$message = "Trimming complete for $opt{'O'}! Generating per-cell stats, but alignment can proceed.";
