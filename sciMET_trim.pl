@@ -14,7 +14,7 @@ $min_RL = 30;
 $threads = 1;
 $r2_trim = 10;
 
-getopts("O:A:1:2:T:m:t:e:D", \%opt);
+getopts("O:A:1:2:T:m:t:e:Dur:", \%opt);
 
 $die = "
 
@@ -39,6 +39,8 @@ Options:
 -m   [INT]   Min read length (def = $min_RL)
 -t   [INT]   Threads to use (def = $threads)
 -e   [INT]   Trim bases from the end of read 2 after adapter trim (def = $r2_trim)
+-u           Retain unpaired reads (def = discard)
+-r   [STR]   Report to specified slack channel when trimming is complete.
 
 Trimmomatic mode (deprecated):
 -D           Run in old trimmomatic mode.
@@ -58,7 +60,11 @@ if (!defined $opt{'D'}) {
 	
 	if (!defined $opt{'1'} || !defined $opt{'2'}) {die "\nERROR: For trim glaore mode, reads 1 and 2 must be specified.\n$die"};
 	
-	$trim_command = "trim_galore -a CTATCTCTTATA -a2 AGATCGGAAGAGC --three_prime_clip_R2 $r2_trim -j $threads --paired --retain_unpaired $opt{'1'} $opt{'2'}";
+	if (defined $opt{'u'}) {
+		$trim_command = "trim_galore -a CTATCTCTTATA -a2 AGATCGGAAGAGC --three_prime_clip_R2 $r2_trim -j $threads --paired --retain_unpaired $opt{'1'} $opt{'2'}";
+	} else {
+		$trim_command = "trim_galore -a CTATCTCTTATA -a2 AGATCGGAAGAGC --three_prime_clip_R2 $r2_trim -j $threads --paired $opt{'1'} $opt{'2'}";
+	}
 	system($trim_command);
 	
 	# rename to output prefix names
@@ -74,6 +80,11 @@ if (!defined $opt{'D'}) {
 	
 	# write trimming complete file to note further processing can happen
 	system("date > trim.complete");
+	
+	if (defined $opt{'r'}) {
+		$message = "Trimming complete for $opt{'O'}! Generating per-cell stats, but alignment can proceed.";
+		system("slack -m \"$message\" $opt{'r'} >/dev/null 2>/dev/null");
+	}
 	
 	# use single core to get stats on the trim in barcode-aware manner.
 	%BARC_IN_ct = (); %BARC_OUT_ct = (); %BARC_R1_up = (); %BARC_R2_up = ();
@@ -113,7 +124,7 @@ if (!defined $opt{'D'}) {
 		$pct1u = sprintf("%.2f", ($BARC_R1_up{$barc}/$BARC_IN_ct{$barc})*100);
 		$pct2u = sprintf("%.2f", ($BARC_R2_up{$barc}/$BARC_IN_ct{$barc})*100);
 		
-		print OUT "$barc\t$BARC_IN_ct{$barc}\t$BARC_OUT_ct{$barc}\t$pct\t$BARC_R1_up{$barc}\t$pct1u\t$BARC_R2_up{$barc}\t$pct2u\n";
+		print RPT "$barc\t$BARC_IN_ct{$barc}\t$BARC_OUT_ct{$barc}\t$pct\t$BARC_R1_up{$barc}\t$pct1u\t$BARC_R2_up{$barc}\t$pct2u\n";
 	} close RPT;
 	
 	exit;

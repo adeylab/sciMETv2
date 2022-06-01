@@ -2,7 +2,7 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("O:1:2:t:R:sr:", \%opt);
+getopts("O:1:2:t:R:sr:u", \%opt);
 
 $hg38na = "/home/groups/oroaklab/refs/hg38/hs38d1_noalt_bismark/";
 $mm10 = "/home/groups/oroaklab/refs/mm10/bismark/";
@@ -33,11 +33,14 @@ Options:
               Uses ~2x this number plus another ~2 threads total
               Will use same number for sort. (def = $threads)
 
+-u           Retain unmapped reads (def = discard)
 -s           Do not proceed with sorting
 -r   [STR]   Report alignment stats to slack channel
               Requires 'slack' as cli callable
 
 ";
+
+$start_time = localtime(time);
 
 if (!defined $opt{'R'}) {
 	die "\nERROR: Provide a reference as -R\n$die";
@@ -56,7 +59,11 @@ open LOG, ">$opt{'O'}.align.log";
 $ts = localtime(time);
 print LOG "$ts\tAlignment called.\n";
 
-$pe_align_call = "bismark --pbat -p $threads --local --unmapped -o $opt{'O'} $ref -1 $opt{'1'} -2 $opt{'2'} 2>> $opt{'O'}.align.log";
+if (defined $opt{'u'}) {
+	$pe_align_call = "bismark --pbat -p $threads --local --unmapped -o $opt{'O'} $ref -1 $opt{'1'} -2 $opt{'2'} 2>> $opt{'O'}.align.log";
+} else {
+	$pe_align_call = "bismark --pbat -p $threads --local -o $opt{'O'} $ref -1 $opt{'1'} -2 $opt{'2'} 2>> $opt{'O'}.align.log";
+}
 print LOG "Command: $pe_align_call\n";
 system("$pe_align_call");
 system("mv $opt{'O'}/*.bam $opt{'O'}.unsorted.bam");
@@ -74,7 +81,8 @@ $ts = localtime(time);
 print LOG "$ts\tDone.\n";
 
 if (defined $opt{'r'}) {
-	system("slack -F $opt{'O'}.align_report.txt $opt{'r'} >/dev/null 2>/dev/null");
+	$message = "Alignment complete for $opt{'O'}\nStart time: $start_time\nEnd time: $ts\nCall: $pe_align_call\n";
+	system("slack -F $opt{'O'}.align_report.txt -c \"$message\" $opt{'r'} >/dev/null 2>/dev/null");
 }
 
 exit;
