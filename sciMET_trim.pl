@@ -58,7 +58,7 @@ if (defined $opt{'e'}) {$r2_trim = $opt{'e'}};
 # NEW MODE: TRIM GALORE
 if (!defined $opt{'D'}) {
 	
-	if (!defined $opt{'1'} || !defined $opt{'2'}) {die "\nERROR: For trim glaore mode, reads 1 and 2 must be specified.\n$die"};
+	if (!defined $opt{'1'} || !defined $opt{'2'}) {die "\nERROR: For trim galore mode, reads 1 and 2 must be specified.\n$die"};
 	
 	if (defined $opt{'u'}) {
 		$trim_command = "trim_galore -a CTATCTCTTATA -a2 AGATCGGAAGAGC --three_prime_clip_R2 $r2_trim -j $threads --paired --retain_unpaired $opt{'1'} $opt{'2'} >> $opt{'O'}.trim.log 2>> $opt{'O'}.trim.log";
