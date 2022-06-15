@@ -86,7 +86,15 @@ while ($l = <IN>) {
 		$COORD_read{$coord} = 1;
 		$BARC_kept{$barc}++;
 	}
-} close IN; close OUT;
+} close IN;
+
+# print last cell
+foreach $tag (keys %READ_keep) {
+	print OUT "$READ_keep{$tag}\n";
+	$total_kept++;
+}
+
+close OUT;
 
 open OUT, ">$opt{'O'}.complexity.txt";
 $rank = 1;
