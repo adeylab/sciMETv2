@@ -1,5 +1,7 @@
 Processing sciMET datasets (including barnyard / species spike-in)
 
+These tools require: perl, trimmomatic (or trim galore for newer versions), R, bismark, and bedtools to be able to carry out the analysis workflow. No installation is required, they are basic perl processing scripts that are largely wrappers for the other tools used.
+
 Barnyard portion
 1) unidex to generate demultiplexed reads as fastq files and filter to valid barcodes (scMET mode); this trims the first 10bp of
      read 1 which includes the randomer ligation region.
