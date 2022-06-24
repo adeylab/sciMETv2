@@ -161,7 +161,7 @@ close TAR;
 #chr11   120821  120821  TCCAGAAGCCGTAGTAGTCCGTTCCAAT    X     chr start end target 
 # 0        1       2                     3               4      5    6    7     8
 
-if ($opt{'F'}) =~ /txt$/) {
+if ($opt{'F'} =~ /txt$/) {
 	@FOLDERS = ();
 	open F, "$opt{'F'}";
 	while ($l = <F>) {chomp $l; push @FOLDERS, $l};

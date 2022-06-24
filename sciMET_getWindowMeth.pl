@@ -60,7 +60,7 @@ for ($i = 1; $i <= 22; $i++) {
 	$CHRS{"chr$i"} = 1;
 } $CHRS{"chrX"} = 1; $CHRS{"chrY"} = 1;
 
-if ($opt{'F'}) =~ /txt$/) {
+if ($opt{'F'} =~ /txt$/) {
 	@FOLDERS = ();
 	open F, "$opt{'F'}";
 	while ($l = <F>) {chomp $l; push @FOLDERS, $l};
