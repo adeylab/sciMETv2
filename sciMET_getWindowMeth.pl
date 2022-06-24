@@ -18,6 +18,7 @@ Required options:
 -F   [STR]   Folder with chromosome-split methylation calls for cells
              generated using sciMET_extract.pl
 			 Can be multiple folders comma-separated.
+             Or can be a single text file (end in .txt) with list of folders
 -O   [STR]   Output prefix, creates or uses directory.
 -B   [STR]   Bed file with targets to profile.
              Generate using: sciMET_featuresToScanBed.pl
@@ -59,7 +60,14 @@ for ($i = 1; $i <= 22; $i++) {
 	$CHRS{"chr$i"} = 1;
 } $CHRS{"chrX"} = 1; $CHRS{"chrY"} = 1;
 
-@FOLDERS = split(/,/, $opt{'F'});
+if ($opt{'F'}) =~ /txt$/) {
+	@FOLDERS = ();
+	open F, "$opt{'F'}";
+	while ($l = <F>) {chomp $l; push @FOLDERS, $l};
+	close F;
+} else {
+	@FOLDERS = split(/,/, $opt{'F'});
+}
 foreach $chr_dir (@FOLDERS) {
 	foreach $chr (keys %CHRS) {
 		if (-e "$chr_dir/$chr.bed.gz") {

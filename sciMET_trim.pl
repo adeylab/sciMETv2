@@ -106,20 +106,22 @@ if (!defined $opt{'D'}) {
 		$null = <IN>; $null = <IN>; $null = <IN>;
 	} close IN;
 	
-	open IN, "zcat $opt{'O'}.trimmed.unpaired.R1.fq.gz |";
-	while ($tag = <IN>) {
-		chomp $tag; $tag =~ s/^@//; $tag =~ s/:.+$//;
-		$BARC_R1_up{$tag}++;
-		$null = <IN>; $null = <IN>; $null = <IN>;
-	} close IN;
+	if (defined $opt{'u'}) {
+		open IN, "zcat $opt{'O'}.trimmed.unpaired.R1.fq.gz |";
+		while ($tag = <IN>) {
+			chomp $tag; $tag =~ s/^@//; $tag =~ s/:.+$//;
+			$BARC_R1_up{$tag}++;
+			$null = <IN>; $null = <IN>; $null = <IN>;
+		} close IN;
+		
+		open IN, "zcat $opt{'O'}.trimmed.unpaired.R2.fq.gz |";
+		while ($tag = <IN>) {
+			chomp $tag; $tag =~ s/^@//; $tag =~ s/:.+$//;
+			$BARC_R2_up{$tag}++;
+			$null = <IN>; $null = <IN>; $null = <IN>;
+		} close IN;
+	}
 	
-	open IN, "zcat $opt{'O'}.trimmed.unpaired.R2.fq.gz |";
-	while ($tag = <IN>) {
-		chomp $tag; $tag =~ s/^@//; $tag =~ s/:.+$//;
-		$BARC_R2_up{$tag}++;
-		$null = <IN>; $null = <IN>; $null = <IN>;
-	} close IN;
-
 	open RPT, ">$opt{'O'}.trimmed.stats.txt";
 	foreach $barc (keys %BARC_IN_ct) {
 		$pct = sprintf("%.2f", ($BARC_OUT_ct{$barc}/$BARC_IN_ct{$barc})*100);

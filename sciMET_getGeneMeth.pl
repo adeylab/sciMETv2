@@ -24,6 +24,7 @@ Required options:
 -F   [STR]   Folder with chromosome-split methylation calls for cells
              generated using sciMET_extract.pl
 			 Can be multiple folders comma-separated.
+             Or can be a file ending in 'txt' with aline for each folder
 -O   [STR]   Output prefix, creates or uses directory. Sugegsted to include CH or CG in name.
 
 Default Options:
@@ -160,7 +161,14 @@ close TAR;
 #chr11   120821  120821  TCCAGAAGCCGTAGTAGTCCGTTCCAAT    X     chr start end target 
 # 0        1       2                     3               4      5    6    7     8
 
-@FOLDERS = split(/,/, $opt{'F'});
+if ($opt{'F'}) =~ /txt$/) {
+	@FOLDERS = ();
+	open F, "$opt{'F'}";
+	while ($l = <F>) {chomp $l; push @FOLDERS, $l};
+	close F;
+} else {
+	@FOLDERS = split(/,/, $opt{'F'});
+}
 foreach $chr_dir (@FOLDERS) {
 	foreach $chr (keys %CHR_READS) {
 		if (-e "$chr_dir/$chr.bed.gz") {

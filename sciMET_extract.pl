@@ -64,6 +64,11 @@ if (!defined $opt{'O'}) {
 	$opt{'O'} =~ s/\.bam//;
 }
 
+if (defined $opt{'N'}) {$cells_per_folder = $opt{'N'}};
+if (defined $opt{'M'}) {$mCH_max = $opt{'M'}};
+if (defined $opt{'m'}) {$minSize = $opt{'m'}};
+if (defined $opt{'t'}) {$threads = $opt{'t'}};
+
 if (defined $opt{'L'}) {
 	open IN, "$opt{'L'}";
 	while ($l = <IN>) {
@@ -92,11 +97,6 @@ if (defined $opt{'L'}) {
 	$last_folder = $folderID;
 	close OUT;
 }
-
-if (defined $opt{'N'}) {$cells_per_folder = $opt{'N'}};
-if (defined $opt{'M'}) {$mCH_max = $opt{'M'}};
-if (defined $opt{'m'}) {$minSize = $opt{'m'}};
-if (defined $opt{'t'}) {$threads = $opt{'t'}};
 
 open LOG, ">$opt{'O'}.extract.log";
 
