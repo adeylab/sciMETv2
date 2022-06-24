@@ -170,7 +170,9 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		for ($id = 1; $id <= $last_folder; $id++) {
 			if (defined $opt{'G'}) {
 				system("mkdir $opt{'O'}.HCH.$folderID.chroms");
+				system("echo \$(pwd)/$opt{'O'}.HCH.$folderID.chroms >> $opt{'O'}.HCH.chrom_folders.txt");
 				system("mkdir $opt{'O'}.GCH.$folderID.chroms");
+				system("echo \$(pwd)/$opt{'O'}.GCH.$folderID.chroms >> $opt{'O'}.GCH.chrom_folders.txt");
 				foreach $chrom (keys %CHROMS) {
 					$handle = $folderID.$CHROMS{$chrom}."H";
 					$HANDLES{$handle} = 1;
@@ -181,6 +183,7 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				}
 			} else {
 				system("mkdir $opt{'O'}.CH.$folderID.chroms");
+				system("echo \$(pwd)/$opt{'O'}.CH.$folderID.chroms >> $opt{'O'}.CH.chrom_folders.txt");
 				foreach $chrom (keys %CHROMS) {
 					$handle = $folderID.$CHROMS{$chrom};
 					$HANDLES{$handle} = 1;
@@ -192,7 +195,9 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	} else {
 		if (defined $opt{'G'}) {
 			system("mkdir $opt{'O'}.HCH.$folderID.chroms");
+			system("echo \$(pwd)/$opt{'O'}.HCH.$folderID.chroms >> $opt{'O'}.HCH.chrom_folders.txt");
 			system("mkdir $opt{'O'}.GCH.$folderID.chroms");
+			system("echo \$(pwd)/$opt{'O'}.GCH.$folderID.chroms >> $opt{'O'}.GCH.chrom_folders.txt");
 			foreach $chrom (keys %CHROMS) {
 				$handle = $folderID.$CHROMS{$chrom}."H";
 				$HANDLES{$handle} = 1;
@@ -203,6 +208,7 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 			}
 		} else {
 			system("mkdir $opt{'O'}.CH.$folderID.chroms");
+			system("echo \$(pwd)/$opt{'O'}.CH.$folderID.chroms >> $opt{'O'}.CH.chrom_folders.txt");
 			foreach $chrom (keys %CHROMS) {
 				$handle = $folderID.$CHROMS{$chrom};
 				$HANDLES{$handle} = 1;
@@ -245,7 +251,9 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				
 				if (defined $opt{'G'}) {
 					system("mkdir $opt{'O'}.HCH.$folderID.chroms");
+					system("echo \$(pwd)/$opt{'O'}.HCH.$folderID.chroms >> $opt{'O'}.HCH.chrom_folders.txt");
 					system("mkdir $opt{'O'}.GCH.$folderID.chroms");
+					system("echo \$(pwd)/$opt{'O'}.GCH.$folderID.chroms >> $opt{'O'}.GCH.chrom_folders.txt");
 					foreach $chrom (keys %CHROMS) {
 						$handle = $folderID.$CHROMS{$chrom}."H";
 						$HANDLES{$handle} = 1;
@@ -256,6 +264,7 @@ if (defined $opt{'H'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 					}
 				} else {
 					system("mkdir $opt{'O'}.CH.$folderID.chroms");
+					system("echo \$(pwd)/$opt{'O'}.CH.$folderID.chroms >> $opt{'O'}.CH.chrom_folders.txt");
 					foreach $chrom (keys %CHROMS) {
 						$handle = $folderID.$CHROMS{$chrom};
 						$HANDLES{$handle} = 1;
@@ -368,7 +377,9 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 		for ($id = 1; $id <= $last_folder; $id++) {
 			if (defined $opt{'G'}) {
 				system("mkdir $opt{'O'}.HCG.$folderID.chroms");
+				system("echo \$(pwd)/$opt{'O'}.HCG.$folderID.chroms >> $opt{'O'}.HCG.chrom_folders.txt");
 				system("mkdir $opt{'O'}.GCG.$folderID.chroms");
+				system("echo \$(pwd)/$opt{'O'}.GCG.$folderID.chroms >> $opt{'O'}.GCG.chrom_folders.txt");
 				foreach $chrom (keys %CHROMS) {
 					$handle = $folderID.$CHROMS{$chrom}."H";
 					$HANDLES{$handle} = 1;
@@ -379,6 +390,7 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				}
 			} else {
 				system("mkdir $opt{'O'}.CG.$folderID.chroms");
+				system("echo \$(pwd)/$opt{'O'}.CG.$folderID.chroms >> $opt{'O'}.CG.chrom_folders.txt");
 				foreach $chrom (keys %CHROMS) {
 					$handle = $folderID.$CHROMS{$chrom};
 					$HANDLES{$handle} = 1;
@@ -390,7 +402,9 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 	} else {
 		if (defined $opt{'G'}) {
 			system("mkdir $opt{'O'}.HCG.$folderID.chroms");
+			system("echo \$(pwd)/$opt{'O'}.HCG.$folderID.chroms >> $opt{'O'}.HCG.chrom_folders.txt");
 			system("mkdir $opt{'O'}.GCG.$folderID.chroms");
+			system("echo \$(pwd)/$opt{'O'}.GCG.$folderID.chroms >> $opt{'O'}.GCG.chrom_folders.txt");
 			foreach $chrom (keys %CHROMS) {
 				$handle = $folderID.$CHROMS{$chrom}."H";
 				$HANDLES{$handle} = 1;
@@ -401,6 +415,7 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 			}
 		} else {
 			system("mkdir $opt{'O'}.CG.$folderID.chroms");
+			system("echo \$(pwd)/$opt{'O'}.CG.$folderID.chroms >> $opt{'O'}.CG.chrom_folders.txt");
 			foreach $chrom (keys %CHROMS) {
 				$handle = $folderID.$CHROMS{$chrom};
 				$HANDLES{$handle} = 1;
@@ -443,7 +458,9 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 				push @{$FOLDERID_cellIDs{$folderID}}, $cellID;
 				if (defined $opt{'G'}) {
 					system("mkdir $opt{'O'}.HCG.$folderID.chroms");
+					system("echo \$(pwd)/$opt{'O'}.HCG.$folderID.chroms >> $opt{'O'}.HCG.chrom_folders.txt");
 					system("mkdir $opt{'O'}.GCG.$folderID.chroms");
+					system("echo \$(pwd)/$opt{'O'}.GCG.$folderID.chroms >> $opt{'O'}.GCG.chrom_folders.txt");
 					foreach $chrom (keys %CHROMS) {
 						$handle = $folderID.$CHROMS{$chrom}."H";
 						$HANDLES{$handle} = 1;
@@ -454,6 +471,7 @@ if (defined $opt{'C'} || (!defined $opt{'H'} && !defined $opt{'C'})) {
 					}
 				} else {
 					system("mkdir $opt{'O'}.CG.$folderID.chroms");
+					system("echo \$(pwd)/$opt{'O'}.CG.$folderID.chroms >> $opt{'O'}.CG.chrom_folders.txt");
 					foreach $chrom (keys %CHROMS) {
 						$handle = $folderID.$CHROMS{$chrom};
 						$HANDLES{$handle} = 1;
