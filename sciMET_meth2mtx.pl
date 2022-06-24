@@ -16,6 +16,7 @@ Options:
 
 -F   [DIR]   Directory with methylation by cell for each chromosome (req)
              Can be a comma separated list to process multiple experiments.
+             Or can be a file ending in 'txt' with aline for each folder
 -B   [STR]   Bed file of windows for computing methylation (req)
 -O   [STR]   Output prefix (req)
 
@@ -66,7 +67,14 @@ $not_in_window=0;
 $win_with_cov=0;
 @CELLIDs = ();
 
-@FOLDERS = split(/,/, $opt{'F'});
+if ($opt{'F'} =~ /txt$/) {
+	@FOLDERS = ();
+	open F, "$opt{'F'}";
+	while ($l = <F>) {chomp $l; push @FOLDERS, $l};
+	close F;
+} else {
+	@FOLDERS = split(/,/, $opt{'F'});
+}
 foreach $chr_dir (@FOLDERS) {
 	foreach $chr (keys %CHR_HANDLES) {
 		
