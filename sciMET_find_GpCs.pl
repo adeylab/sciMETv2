@@ -8,7 +8,11 @@ sciMET_find_GpCs.pl [genome fasta].gz > [GC sites bed file]
 
 if (!defined $ARGV[0]) {die $die};
 
-open IN, "zcat $ARGV[0] |";
+if ($ARGV[0] =~ /gz$/) {
+	open IN, "zcat $ARGV[0] |";
+} else {
+	open IN, "$ARGV[0]";
+}
 while ($l = <IN>) {
 	chomp $l;
 	if ($l =~ /^\>/) {

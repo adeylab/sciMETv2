@@ -2,7 +2,7 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("O:t:q:", \%opt);
+getopts("O:t:q:n", \%opt);
 
 $threads = 1;
 $minq = 10;
@@ -19,6 +19,7 @@ Options:
    -O   [STR]   Output prefix (def = input bam prefix)
    -t   [INT]   Threads for the sorting process. (def = $threads)
    -q   [INT]   Min read alignment quality (def = $minq)
+   -n           Name sort output (def = coord)
    
 ";
 
@@ -33,7 +34,11 @@ if (!defined $opt{'O'}) {
 if (defined $opt{'q'}) {$minq = $opt{'q'}};
 if (defined $opt{'t'}) {$threads = $opt{'t'}};
 
-open OUT, "| samtools view -bSu - | samtools sort -@ $threads -T $opt{'O'}.TMP -m 4G - > $opt{'O'}.bbrd.q10.bam";
+if (!defined $opt{'n'}) {
+	open OUT, "| samtools view -bSu - | samtools sort -@ $threads -T $opt{'O'}.TMP -m 4G - > $opt{'O'}.bbrd.q10.bam";
+} else {
+	open OUT, "| samtools view -bSu - | samtools sort -n -@ $threads -T $opt{'O'}.TMP -m 4G - > $opt{'O'}.bbrd.q10.nsrt.bam";
+}
 
 open HEAD, "samtools view -H $ARGV[0] |";
 while ($l = <HEAD>){print OUT "$l"};

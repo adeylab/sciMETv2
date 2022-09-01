@@ -2,10 +2,10 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("F:B:A:a:O:", \%opt);
+getopts("F:B:A:a:O:m:", \%opt);
 
 # defaults
-
+$minCov=10;
 
 $die = "
 
@@ -23,6 +23,7 @@ Required options:
 -B   [STR]   Bed file with targets to profile.
              Generate using: sciMET_featuresToScanBed.pl
              Each feature needs 4x columns - chrom, start, end, windowPosition
+-m   [INT]   Min coverage to report call, annotation-based if -A (def = 10)
 
 Other Options:
 -A   [STR]   Annot file
@@ -34,6 +35,8 @@ Other Options:
 if (!defined $opt{'F'} ||
 	!defined $opt{'O'} ||
 	!defined $opt{'B'}) {die $die};
+
+if (defined $opt{'m'}) {$minCov = $opt{'m'}};
 
 $opt{'F'} =~ s/\/$//;
 
@@ -97,44 +100,43 @@ foreach $chr_dir (@FOLDERS) {
 	}
 }
 
-if ($WINID_BASE_count{'1'}{'z'} > 0) {
-	open OUT, ">$opt{'O'}.CG.txt";
-	foreach $winID (sort {$a<=>$b} keys %WINID_BASE_count) {
+
+open OUT, ">$opt{'O'}.CG.txt";
+foreach $winID (sort {$a<=>$b} keys %WINID_BASE_count) {
+	if (($WINID_BASE_count{$winID}{'Z'}+$WINID_BASE_count{$winID}{'z'})>=$minCov) {
 		$meth = sprintf("%.3f", ($WINID_BASE_count{$winID}{'Z'}/($WINID_BASE_count{$winID}{'Z'}+$WINID_BASE_count{$winID}{'z'}))*100);
-		print OUT "$winID\tALL\t$meth\n";
+		$cov = ($WINID_BASE_count{$winID}{'Z'}+$WINID_BASE_count{$winID}{'z'});
+		print OUT "$winID\tALL\t$meth\t$cov\n";
 		if (defined $opt{'A'}) {
 			foreach $annot (keys %{$WINID_ANNOT_BASE_count{$winID}}) {
-				if ($WINID_ANNOT_BASE_count{$winID}{$annot}{'z'}>0) {
+				if ($WINID_ANNOT_BASE_count{$winID}{$annot}{'z'}>=$minCov) {
 					$meth = sprintf("%.3f", ($WINID_ANNOT_BASE_count{$winID}{$annot}{'Z'}/($WINID_ANNOT_BASE_count{$winID}{$annot}{'Z'}+$WINID_ANNOT_BASE_count{$winID}{$annot}{'z'}))*100);
-					print OUT "$winID\t$annot\t$meth\n";
+					$cov = ($WINID_ANNOT_BASE_count{$winID}{$annot}{'Z'}+$WINID_ANNOT_BASE_count{$winID}{$annot}{'z'});
+					print OUT "$winID\t$annot\t$meth\t$cov\n";
 				}
 			}
 		}
-	} close OUT;
-} else {
-	print STDERR "No CG methylation detected!\n";
-}
+	}
+} close OUT;
 
-if ($WINID_BASE_count{'1'}{'h'} > 0 || $WINID_BASE_count{'1'}{'x'} > 0) {
-	open OUT, ">$opt{'O'}.CH.txt";
-	foreach $winID (sort {$a<=>$b} keys %WINID_BASE_count) {
-		$cov = ($WINID_BASE_count{$winID}{'H'}+$WINID_BASE_count{$winID}{'X'}+$WINID_BASE_count{$winID}{'h'}+$WINID_BASE_count{$winID}{'x'});
-		if ($cov > 0) {
-			$meth = sprintf("%.3f", (($WINID_BASE_count{$winID}{'H'}+$WINID_BASE_count{$winID}{'X'})/$cov)*100);
-			print OUT "$winID\tALL\t$meth\n";
-			if (defined $opt{'A'}) {
-				foreach $annot (keys %{$WINID_ANNOT_BASE_count{$winID}}) {
-					if ($WINID_ANNOT_BASE_count{$winID}{$annot}{'x'}>0 || $WINID_ANNOT_BASE_count{$winID}{$annot}{'h'}>0) {
-						$cov = ($WINID_ANNOT_BASE_count{$winID}{$annot}{'X'}+$WINID_ANNOT_BASE_count{$winID}{$annot}{'H'}+$WINID_ANNOT_BASE_count{$winID}{$annot}{'x'}+$WINID_ANNOT_BASE_count{$winID}{$annot}{'h'});
-						if ($cov > 0) {
-							$meth = sprintf("%.3f", (($WINID_ANNOT_BASE_count{$winID}{$annot}{'X'}+$WINID_ANNOT_BASE_count{$winID}{$annot}{'H'})/$cov)*100);
-							print OUT "$winID\t$annot\t$meth\n";
-						}
+
+
+open OUT, ">$opt{'O'}.CH.txt";
+foreach $winID (sort {$a<=>$b} keys %WINID_BASE_count) {
+	$cov = ($WINID_BASE_count{$winID}{'H'}+$WINID_BASE_count{$winID}{'X'}+$WINID_BASE_count{$winID}{'h'}+$WINID_BASE_count{$winID}{'x'});
+	if ($cov >= $minCov) {
+		$meth = sprintf("%.3f", (($WINID_BASE_count{$winID}{'H'}+$WINID_BASE_count{$winID}{'X'})/$cov)*100);
+		print OUT "$winID\tALL\t$meth\t$cov\n";
+		if (defined $opt{'A'}) {
+			foreach $annot (keys %{$WINID_ANNOT_BASE_count{$winID}}) {
+				if ($WINID_ANNOT_BASE_count{$winID}{$annot}{'x'}>0 || $WINID_ANNOT_BASE_count{$winID}{$annot}{'h'}>0) {
+					$cov = ($WINID_ANNOT_BASE_count{$winID}{$annot}{'X'}+$WINID_ANNOT_BASE_count{$winID}{$annot}{'H'}+$WINID_ANNOT_BASE_count{$winID}{$annot}{'x'}+$WINID_ANNOT_BASE_count{$winID}{$annot}{'h'});
+					if ($cov >= $minCov) {
+						$meth = sprintf("%.3f", (($WINID_ANNOT_BASE_count{$winID}{$annot}{'X'}+$WINID_ANNOT_BASE_count{$winID}{$annot}{'H'})/$cov)*100);
+						print OUT "$winID\t$annot\t$meth\t$cov\n";
 					}
 				}
 			}
 		}
-	} close OUT;
-} else {
-	print STDERR "No CH methylation detected!\n";
-}
+	}
+} close OUT;
