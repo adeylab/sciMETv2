@@ -7,7 +7,7 @@ BEGIN {
 
 use Getopt::Std; %opt = ();
 
-getopts("O:t:sm:G:", \%opt);
+getopts("O:t:sm:G:C:", \%opt);
 
 # dfaults
 $minSize = 10000000;
@@ -26,11 +26,20 @@ Options:
    -G   [BED]   Bed file of GpCs - will create additional folders
                   for GpC or HpC contexts.
    -t   [INT]   Max number of concurrent threads (def = 1)
+   -C   [STR]   List of cellIDs to include (use instead of pre-
+                  filtering bam file)
    
 ";
 
 if (!defined $ARGV[0]) {die $die};
 
+if (defined $opt{'C'}) {
+	open IN, "$opt{'C'}";
+	while ($cellID = <IN>) {
+		chomp $cellID;
+		$INCLUDE{$cellID} = 1;
+	} close IN;
+}
 
 if (!defined $opt{'s'}) { # main thread
 	#defaults
@@ -62,35 +71,41 @@ if (!defined $opt{'s'}) { # main thread
 		chomp $l;
 		@P = split(/\t/, $l);
 		$barc = $P[0]; $barc =~ s/:.+$//;
-		# check to close out barcode
-		if ($currentBarc ne $barc) {
-			# close out prev barc
-			if ($currentBarc ne "null") {
-				close OUT;
-				$QUEUE{$currentBarc} = 0;
-#				print LOG "\t\t$currentBarc added to queue.\n";
+		
+		# check if barc is included, ortherwise skip line
+		if (!defined $opt{'C'} || defined $INCLUDE{$barc}) {
+		
+			# check to close out barcode
+			if ($currentBarc ne $barc) {
+				# close out prev barc
+				if ($currentBarc ne "null") {
+					close OUT;
+					$QUEUE{$currentBarc} = 0;
+				}
+				# check thread stats
+				check_threads();
+				
+				# set next barcode & open outfile
+				$currentBarc = $barc;
 				open OUT, ">$opt{'O'}/$currentBarc.meth";
 			}
-			# check thread stats
-			check_threads();
-			
-			# set next barcode
-			$currentBarc = $barc;
-		}
-		# parse read
-		$chr = $P[2];
-		$pos = $P[3];
-		if ($methCol eq "null") {
-			for ($i = 11; $i < @P; $i++) {
-				if ($P[$i] =~ /^XB/) {
-					$methCol = $i;
-					$i+=100;
+			# parse read
+			$chr = $P[2];
+			$pos = $P[3];
+			# ID column in bam that has the meth col if not yet found
+			if ($methCol eq "null") {
+				for ($i = 11; $i < @P; $i++) {
+					if ($P[$i] =~ /^XB/) {
+						$methCol = $i;
+						$i+=100;
+					}
 				}
 			}
+			$meth = $P[$methCol];
+			$meth =~ s/^XB:Z://;
+			print OUT "$chr\t$pos\t$meth\n";
+			
 		}
-		$meth = $P[$methCol];
-		$meth =~ s/^XB:Z://;
-		print OUT "$chr\t$pos\t$meth\n";
 	} close IN;
 	
 	# finish last one
@@ -222,8 +237,9 @@ if (!defined $opt{'s'}) { # main thread
 				}
 			}
 			
-			print $handle "$chrom\t$start\t$start\t$barc\t$CALL_CONV{$call}\n";
-			
+			if (defined $CALL_CONV{$call}) {
+				print $handle "$chrom\t$start\t$start\t$barc\t$CALL_CONV{$call}\n";
+			}
 		}
 	}
 	

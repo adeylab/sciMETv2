@@ -30,7 +30,7 @@ Options:
 -2   [STR]   Trimmed read 2 (paired, req)
 
 -t   [INT]   Number of threads for alignment.
--o   [INT]   Number of threads for output.
+-o   [INT]   Number of threads for output / sort.
 
 -r   [STR]   Report alignment stats to slack channel
               Requires 'slack' as cli callable
@@ -63,7 +63,8 @@ $align_call = "bsbolt Align -F1 $opt{'2'} -F2 $opt{'1'} -t $threads -OT $o_threa
 print LOG "Command: $align_call\n";
 system("$align_call");
 
-
+print LOG "Name sorting.\n";
+system("samtools sort -n -@ $o_threads -T $opt{'O'}.TMP -m 4G $opt{'O'}.bam > $opt{'O'}.nsrt.bam 2>> $opt{'O'}.bsbolt.log");
 
 $ts = localtime(time);
 print LOG "$ts\tDone.\n";
