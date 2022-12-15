@@ -2,7 +2,7 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("w:h:O:A:G:H", \%opt);
+getopts("w:h:O:A:G:HS:", \%opt);
 
 $width = 5;
 $height = 4;
@@ -21,6 +21,7 @@ Options:
    -h   [INT]   Height of plot (def = $height)
    -O   [STR]   Output prefix (def = input file prefix)
    -H           CH methylation mode (colors / scaling; def = CG)
+   -S   [MIN,MAX] Min and max bounds on scale (def = all)
    
    -G   [LST]   Comma-separated list of genes
    -A   [LST]   Comma-separated list of annotations
@@ -32,13 +33,14 @@ if (!defined $ARGV[0]) {die $die};
 
 if (defined $opt{'w'}) {$width = $opt{'w'}};
 if (defined $opt{'h'}) {$height = $opt{'h'}};
+if (defined $opt{'S'}) {($scaleMin,$scaleMax) = split(/,/, $opt{'S'})};
 
 if (!defined $opt{'O'}) {
 	$opt{'O'} = $ARGV[0];
 	$opt{'O'} =~ s/\.txt$//;
 }
 
-if (defined $opt{'G'} || defined $opt{'A'}) {
+if (defined $opt{'G'} || defined $opt{'A'} || defined $opt{'S'}) {
 	$included = 0;
 	
 	if (defined $opt{'G'}) {
@@ -59,6 +61,11 @@ if (defined $opt{'G'} || defined $opt{'A'}) {
 		
 		if (defined $GENES{$target} || !defined $opt{'G'}) {
 			if (defined $ANNOTS{$annot} || !defined $opt{'A'}) {
+				if (defined $opt{'S'}) {
+					if ($meth < $scaleMin) {$meth = $scaleMin};
+					if ($meth > $scaleMax) {$meth = $scaleMax};
+					$l = "$target\t$annot\t$meth\t$zscore";
+				}
 				$included++;
 				print OUT "$l\n";
 			}
@@ -68,7 +75,7 @@ if (defined $opt{'G'} || defined $opt{'A'}) {
 	
 	if ($included<1) {
 		system("rm -f $opt{'O'}.plot.txt");
-		die "ERROR: Genes listed not detected in gene x annot methylaiton file!";
+		die "ERROR: Genes listed not detected in gene x annot methylation file!";
 	}
 } else {
 	$infile = $ARGV[0];
