@@ -99,7 +99,7 @@ if (defined $opt{'1'}) {
 	$ts = localtime(time);
 	print LOG "$ts Aligning read 1 for $r1_rounds rounds.\n";
 	for ($round = 1; $round <= $r1_rounds; $round++) {
-		if (defined $opt{'k'} && $opt{'k'} ne "done") {$round = $opt{'k'}; $opt{'k'} = "done"};
+		if (defined $opt{'k'}) {$round = $opt{'k'}};
 		if ($round > 1) {
 			$ts = localtime(time);
 			print LOG "$ts Trimming unaligned R1 reads by $r1_trim, round $round...\n";
@@ -138,7 +138,7 @@ if (defined $opt{'2'}) {
 	$ts = localtime(time);
 	print LOG "$ts Aligning read 2 for $r2_rounds rounds.\n";
 	for ($round = 1; $round <= $r2_rounds; $round++) {
-		if (defined $opt{'l'} && $opt{'l'} ne "done") {$round = $opt{'l'}; $opt{'l'} = "done"};
+		if (defined $opt{'l'}) {$round = $opt{'l'}};
 		if ($round > 1) {
 			$ts = localtime(time);
 			print LOG "$ts Trimming unaligned R2 reads by $r2_trim, round $round...\n";

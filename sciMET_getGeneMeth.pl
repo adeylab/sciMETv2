@@ -5,7 +5,7 @@ use Getopt::Std; %opt = ();
 getopts("A:F:O:G:S:s:E:Vm:rL:xpC:a:", \%opt);
 
 # defaults
-$refGene = "/home/groups/oroaklab/refs/hg38/hg38.refGene.txt";
+$refGene = "/home/groups/ravnica/refs/hg38/hg38.refGene.txt";
 $startPad = 20000;
 $endPad = 20000;
 $minCov = 50;
@@ -38,7 +38,7 @@ Default Options:
 -m   [INT]   Min number of bases in region to make a methylaiton call (def = $minCov)
 -r           Replace genes in annot methylaiton file (def = keep previous)
 -L   [STR]   Text file listing targets (can be supplemented with those listed in ARGS)
-             (e.g. /home/groups/oroaklab/refs/hg38/hg38.refGene.uniqNames.txt)
+             (e.g. /home/groups/ravnica/refs/hg38/hg38.refGene.uniqNames.txt)
 -C   [STR]   File listing CellIDs to include (def = all)
 -x           Do not print out values for individual cells (requires -A)
 -p           Plot after (def = np)

@@ -2,7 +2,7 @@
 
 use Getopt::Std; %opt = ();
 
-getopts("O:t:q:pr:", \%opt);
+getopts("O:t:q:pr:N", \%opt);
 
 $threads = 1;
 $minq = 10;
@@ -14,6 +14,8 @@ sciMET_rmdup_pe.pl (options) [namesort bam file]
 Performs barcode-aware duplicate read removal.
 Paired end alignment mode only.
 
+Outputs a name-sorted bam.
+
 Options:
    -O   [STR]   Output prefix (def = input bam prefix)
    -t   [INT]   Threads for the sorting process. (def = $threads)
@@ -21,7 +23,8 @@ Options:
    -p           Plot after running (req scitools cli callable)
    -r   [STR]   Report plot to specified slack channel
                  (Requires -p and slack as cli callable)
-   
+   -N           Do NOT name sort (coord sort; def = nsrt)
+
 ";
 
 if (!defined $ARGV[0]) {die $die};
@@ -35,7 +38,11 @@ if (!defined $opt{'O'}) {
 if (defined $opt{'q'}) {$minq = $opt{'q'}};
 if (defined $opt{'t'}) {$threads = $opt{'t'}};
 
-open OUT, "| samtools view -bSu - | samtools sort -@ $threads -T $opt{'O'}.TMP -m 4G - > $opt{'O'}.bbrd.q10.bam";
+if (defined $opt{'N'}) {
+	open OUT, "| samtools view -bSu - | samtools sort -@ $threads -T $opt{'O'}.TMP -m 4G - > $opt{'O'}.bbrd.q10.bam";
+} else {
+	open OUT, "| samtools view -bSu - | samtools sort -n -@ $threads -T $opt{'O'}.TMP -m 4G - > $opt{'O'}.bbrd.q10.nsrt.bam";
+}
 
 open HEAD, "samtools view -H $ARGV[0] |";
 while ($l = <HEAD>){print OUT "$l"};

@@ -18,7 +18,6 @@ Options:
 
 -P   [STR]   Pairwise methylation call file (req)
 -A   [STR]   Annot file (req)
--O   [STR]   Output prefix (req)
 -m   [INT]   Min overlapping sites of cell pair (def = $min)
 
 ";

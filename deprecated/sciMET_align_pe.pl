@@ -59,10 +59,10 @@ open LOG, ">$opt{'O'}.align.log";
 $ts = localtime(time);
 print LOG "$ts\tAlignment called.\n";
 
-if (defined $opt{'u'}) { # align swapping reads 1 and 2 and run as standard directional (faster than pbat)
-	$pe_align_call = "bismark -p $threads --local --unmapped -o $opt{'O'} $ref -1 $opt{'2'} -2 $opt{'1'} >> $opt{'O'}.align.log 2>> $opt{'O'}.align.log";
+if (defined $opt{'u'}) {
+	$pe_align_call = "bismark --pbat -p $threads --local --unmapped -o $opt{'O'} $ref -1 $opt{'1'} -2 $opt{'2'} 2>> $opt{'O'}.align.log";
 } else {
-	$pe_align_call = "bismark -p $threads --local -o $opt{'O'} $ref -1 $opt{'2'} -2 $opt{'1'} >> $opt{'O'}.align.log 2>> $opt{'O'}.align.log";
+	$pe_align_call = "bismark --pbat -p $threads --local -o $opt{'O'} $ref -1 $opt{'1'} -2 $opt{'2'} 2>> $opt{'O'}.align.log";
 }
 print LOG "Command: $pe_align_call\n";
 system("$pe_align_call");

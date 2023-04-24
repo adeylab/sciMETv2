@@ -25,6 +25,7 @@ Options:
                   Used to exclude random and other small contigs
    -G   [BED]   Bed file of GpCs - will create additional folders
                   for GpC or HpC contexts.
+                  (eg: /home/groups/ravnica/refs/hg38/hs38d1_noalt.fna.GpC.bed)
    -t   [INT]   Max number of concurrent threads (def = 1)
    -C   [STR]   List of cellIDs to include (use instead of pre-
                   filtering bam file)

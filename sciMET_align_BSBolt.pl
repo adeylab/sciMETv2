@@ -4,9 +4,9 @@ use Getopt::Std; %opt = ();
 
 getopts("O:1:2:t:o:R:r:", \%opt);
 
-$hg38na = "/home/groups/oroaklab/refs/hg38/hs38d1_noalt_bsbolt/";
-$mm10 = "/home/groups/oroaklab/refs/mm10/bsbolt/";
-$hybrid = "/home/groups/oroaklab/refs/hybrid.hg19.mm10_bsbolt/";
+$hg38na = "/home/groups/ravnica/refs/hg38/hs38d1_noalt_bsbolt/";
+$mm10 = "/home/groups/ravnica/refs/mm10/bsbolt/";
+$hybrid = "/home/groups/ravnica/refs/hybrid.hg19.mm10_bsbolt/";
 $threads = 1;
 $o_threads = 1;
 
@@ -16,6 +16,8 @@ sciMET_align_BSBolt.pl (options) -R [reference path] -O [output prefix] -1 [read
 
 Wrapper for bismark to run alignment of sciMETv2 reads.
 reads can be a list that is comma-separated.
+
+Will sort output bam by read name.
 
 Options:
 
@@ -30,7 +32,8 @@ Options:
 -2   [STR]   Trimmed read 2 (paired, req)
 
 -t   [INT]   Number of threads for alignment.
--o   [INT]   Number of threads for output / sort.
+-o   [INT]   Number of threads for output.
+               (also thread count for sorting by name)
 
 -r   [STR]   Report alignment stats to slack channel
               Requires 'slack' as cli callable
@@ -63,8 +66,7 @@ $align_call = "bsbolt Align -F1 $opt{'2'} -F2 $opt{'1'} -t $threads -OT $o_threa
 print LOG "Command: $align_call\n";
 system("$align_call");
 
-print LOG "Name sorting.\n";
-system("samtools sort -n -@ $o_threads -T $opt{'O'}.TMP -m 4G $opt{'O'}.bam > $opt{'O'}.nsrt.bam 2>> $opt{'O'}.bsbolt.log");
+
 
 $ts = localtime(time);
 print LOG "$ts\tDone.\n";
@@ -73,5 +75,12 @@ if (defined $opt{'r'}) {
 	$message = "Alignment complete for $opt{'O'}\nStart time: $start_time\nEnd time: $ts\nCall: $pe_align_call\n";
 	system("slack -F $opt{'O'}.align_report.txt -c \"$message\" $opt{'r'} >/dev/null 2>/dev/null");
 }
+
+$ts = localtime(time);
+print LOG "$ts\tSorting by read name.\n";
+
+$sort_call = "samtools sort -@ $o_threads -n -m 2G $opt{'O'}.bam > $opt{'O'}.nsrt.bam";
+print LOG "Command: $sort_call\n";
+system("$sort_call");
 
 exit;

@@ -172,11 +172,13 @@ if ($CH_status>0) {
 	open CHMeth, ">$opt{'O'}.CH.mtx";
 	open CHRat, ">$opt{'O'}.CH.ratio.mtx";
 	open CHCov, ">$opt{'O'}.CH.cov.mtx";
-	print CHMeth "$header\n"; print CHRat "$header\n"; print CHCov "$header\n";
+	open CHDiff, ">$opt{'O'}.CH.score.mtx";
+	print CHMeth "$header\n"; print CHRat "$header\n"; print CHCov "$header\n"; print CHDiff "$header\n";
 	for ($winID = 1; $winID <= $lastWin; $winID++) {
 		print CHMeth "$WINID_name{$winID}";
 		print CHRat "$WINID_name{$winID}";
 		print CHCov "$WINID_name{$winID}";
+		print CHDiff "$WINID_name{$winID}";
 		foreach $cellID (@CELLIDs) {
 			$X = $WINID_CELLID_covstr{$winID}{$cellID} =~ tr/X//;
 			$x = $WINID_CELLID_covstr{$winID}{$cellID} =~ tr/x//;
@@ -186,28 +188,38 @@ if ($CH_status>0) {
 			if ($cov > 1) {
 				$meth = sprintf("%.3f", ($X+$H)/$cov);
 				$rat = sprintf("%.3f", $meth/$CELLID_mCH{$cellID});
+				$diff = $meth - $CELLID_mCH{$cellID};
+				if ($diff>0) {
+					$score = sprintf("%.3f", $diff/(1-$CELLID_mCH{$cellID}));
+				} else {
+					$score = sprintf("%.3f", $diff/$CELLID_mCH{$cellID});
+				}
 			} else {
 				$meth = 0;
 				$rat = 1;
+				$score = 0;
 			}
 			print CHMeth "\t$meth";
 			print CHRat "\t$rat";
 			print CHCov "\t$cov";
+			print CHDiff "\t$score";
 		}
-		print CHMeth "\n"; print CHRat "\n"; print CHCov "\n";
+		print CHMeth "\n"; print CHRat "\n"; print CHCov "\n"; print CHDiff "\n";
 	}
-	close CHMeth; close CHRat; close CHCov;
+	close CHMeth; close CHRat; close CHCov; close CHDiff;
 }
 
 if ($CG_status>0) {
 	open CGMeth, ">$opt{'O'}.CG.mtx";
 	open CGRat, ">$opt{'O'}.CG.ratio.mtx";
 	open CGCov, ">$opt{'O'}.CG.cov.mtx";
-	print CGMeth "$header\n"; print CGRat "$header\n"; print CGCov "$header\n";
+	open CGDiff, ">$opt{'O'}.CG.score.mtx";
+	print CGMeth "$header\n"; print CGRat "$header\n"; print CGCov "$header\n"; print CGDiff "$header\n";
 	for ($winID = 1; $winID <= $lastWin; $winID++) {
 		print CGMeth "$WINID_name{$winID}";
 		print CGRat "$WINID_name{$winID}";
 		print CGCov "$WINID_name{$winID}";
+		print CGDiff "$WINID_name{$winID}";
 		foreach $cellID (@CELLIDs) {
 			$Z = $WINID_CELLID_covstr{$winID}{$cellID} =~ tr/Z//;
 			$z = $WINID_CELLID_covstr{$winID}{$cellID} =~ tr/z//;
@@ -215,16 +227,25 @@ if ($CG_status>0) {
 			if ($cov > 1) {
 				$meth = sprintf("%.3f", $Z/$cov);
 				$rat = sprintf("%.3f", $meth/$CELLID_mCG{$cellID});
+				$diff = $meth - $CELLID_mCG{$cellID};
+				if ($diff>0) {
+					$score = sprintf("%.3f", $diff/(1-$CELLID_mCG{$cellID}));
+				} else {
+					$score = sprintf("%.3f", $diff/$CELLID_mCG{$cellID});
+				}
 			} else {
 				$meth = 0;
 				$rat = 1;
+				$score = 0;
 			}
 			print CGMeth "\t$meth";
 			print CGRat "\t$rat";
 			print CGCov "\t$cov";
+			print CGDiff "\t$score";
 		}
-		print CGMeth "\n"; print CGRat "\n"; print CGCov "\n";
+		print CGMeth "\n"; print CGRat "\n"; print CGCov "\n"; print CGDiff "\n";
 	}
-	close CGMeth; close CGRat; close CGCov;
+	close CGMeth; close CGRat; close CGCov; close CGDiff;
 }
 
+exit;
