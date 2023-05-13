@@ -60,6 +60,8 @@ Trimmomatic mode (deprecated):
 if (!defined $opt{'O'}) {die "\nERROR: Specify output prefix as -O\n$die"};
 if (defined $opt{'t'}) {$threads = $opt{'t'}};
 if (defined $opt{'e'}) {$r2_trim = $opt{'e'}};
+if (defined $opt{'a'}) {$a1 = $opt{'a'}};
+if (defined $opt{'b'}) {$a2 = $opt{'b'}};
 
 # NEW MODE: TRIM GALORE
 if (!defined $opt{'D'}) {
