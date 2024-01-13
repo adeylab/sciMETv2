@@ -1,9 +1,32 @@
-Processing sciMET datasets
-1) unidex to generate demultiplexed reads as fastq files and filter to valid barcodes (scMET mode)
-3) sciMET_trim.pl - runs trim_galore wrapper
-4) sciMET_align_BSBolt.pl - BSBolt paired-end alignment wrapper, outputs a name (cellID) sorted bam file
-5) sciMET_rmdup_pe.pl - de-duplicates by barcode and outputs a name sorted deduplicated bam file
-6) sciMET_BSBolt_extract.pl - extracts mC status in CG or CH context, outputs in bismark-style calls for each chromosome
-7) sciMET_sortChroms.pl - wrapper to sort the bed files in the output and gzip them (then delete the non-gzipped bed files)
-8) sciMET_meth2mtx.pl - generate matrixes for mC fraction, ratio, coverage, and score (-1 to 1 centered on 0 as global mC of the cell)
-9) dimensionality reduction using irlba (R) (on ratio or score matrix), then UMAP and clustering on the irlba output
+Processing sciMET datasets (including barnyard / species spike-in)
+
+Barnyard portion
+1) unidex to generate demultiplexed reads as fastq files and filter to valid barcodes (scMET mode); this trims the first 10bp of
+     read 1 which includes the randomer ligation region.
+3) sciMET_trim.pl - runs trimmomatic using sciMET adapters and in single-end mode; use -e 10 for most sciMETv2 modes.
+4) sciMET_align.pl to align to hybrid reference which will sort & merge as well
+     if files from other runs should be merged, run with -m to skip the merge and then run samtools merge with all name sorted bam files
+5) scitools rmdup - plot complexity
+6) scitools barnyard-compare to get humand and mouse called cells, use read cutoff based on complexity plot
+
+Species-specific
+
+6) filter trimmed fastq files to be only human or mouse cell reads using sciMET_speciesSplit.pl
+7) repeat alignment, sorting, merging, and rmdup for species alignments
+8) run sciMET_extract.pl on the rmdup & filtered bam file to create context 'chrom' folders then sort it with sciMET_sortChroms.pl
+9) run sciMET_meth2mtx.pl using windows the chroms folder for CG and then CH (separate runs, will auto-detect)
+10) filter the CH matrix based on coverage etc... using sciMET_filtMtx.pl
+11) scitools irlba on the CH methylaiton matrix (not the ratio.mtx)
+12) run umap / matrix-pg / etc... & plot using scitools
+
+13) run getGeneMeth.pl using CH over gene bodies or CG over promoter regions uses the chroms folder from step 8 use the annot
+    file for clusters to make aggregate methylaiton for clusters will also produce single-cell level methylation
+    this can be run with a long list of genes (use -L option) to have a file that can be plotted from
+	plot with plotGeneByAnnot.pl and it will plot all (if a smalls et was used for making the file) or a subset that can be provided
+
+Merging datasets:
+1) CH methylaiton matrixes can be merged using sciMET_mergeMtx.pl. Merge the cov and the methylation level matrixes so that
+   you can filter the merged matrix after.
+2) Tools that leverage the sorted chroms folder containg methylaitonc calls for cells can use a list of folders, including
+   sciMET_meth2mtx.pl and getGeneMeth.pl. As long as cell names are different, it will read them all in. This can be done
+   instead of merging matrixes etc.

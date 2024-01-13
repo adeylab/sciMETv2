@@ -260,13 +260,14 @@ if (!defined $opt{'s'}) { # main thread
 		@M = split(//, $meth);
 		for ($i = 0; $i < @M; $i++) {
 			if ($M[$i] !~ /[0-9]/) {
-				$pos++;
+				#$pos++;
 				$coord = "$chr\t$pos";
 				if (!defined $COORD_meth{$coord}) { # only new cov
 					$cov++;
 					$COORD_meth{$coord} = $M[$i];
 					$METH_ct{$M[$i]}++;
 				}
+				$pos++;
 			} elsif ($M[$i] =~ /[0-9]/) {
 				$add = $M[$i];
 				while ($M[$i+1] !~ /xyz/i && $M[$i+1] =~ /[0-9]/) {

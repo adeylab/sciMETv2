@@ -12,7 +12,7 @@ $adapters = "$RealBin/sciMETv2_adapters.fa";
 $trimmomatic = "/home/users/oconneru/bin/Trimmomatic-0.38/trimmomatic-0.38.jar";
 $min_RL = 30;
 $threads = 1;
-$r2_trim = 10;
+$r2_trim = 0;
 $a1 = "CTATCTCTTATA";
 $a2 = "AGATCGGAAGAGC";
 
@@ -41,7 +41,7 @@ Options:
 -m   [INT]   Min read length (def = $min_RL)
 -t   [INT]   Threads to use (def = $threads)
 -e   [INT]   Trim bases from the end of read 2 after adapter trim (def = $r2_trim)
-               (set to 0 for SL preps since Hmer is not incorporated)
+               (set to 0 for SL preps since Hmer is not incorporated, 10 for LA)
 -u           Retain unpaired reads (def = discard)
 -r   [STR]   Report to specified slack channel when trimming is complete.
 

@@ -14,7 +14,7 @@ $die = "
 
 sciMET_align_BSBolt.pl (options) -R [reference path] -O [output prefix] -1 [read1.trimmed.fq.gz] -2 [read2.trimmed.fq.gz]
 
-Wrapper for bismark to run alignment of sciMETv2 reads.
+Wrapper for BSBOLT to run alignment of sciMETv2 reads.
 reads can be a list that is comma-separated.
 
 Will sort output bam by read name.

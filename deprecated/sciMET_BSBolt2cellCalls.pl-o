@@ -75,9 +75,7 @@ if (!defined $opt{'s'}) { # main thread
 		
 		# check if barc is included, ortherwise skip line
 		if (!defined $opt{'C'} || defined $INCLUDE{$barc}) {
-			# save barc
-			$ALL_CELLS{$barc} = 1;
-			
+		
 			# check to close out barcode
 			if ($currentBarc ne $barc) {
 				# close out prev barc
@@ -146,14 +144,9 @@ if (!defined $opt{'s'}) { # main thread
 		}
 	}
 	$ts = localtime(time);
-	print LOG "$ts\tAll threads complete! Collating CellInfo.\n";
+	print LOG "$ts\tAll threads complete! DONE!\n";
 
-	foreach $barc (keys %ALL_CELLS) {
-		system("cat $opt{'O'}/$barc.complete >> $opt{'O'}.cellInfo.txt && rm -f $opt{'O'}/$barc.complete $opt{'O'}/$barc.meth")
-	}
 
-	exit;
-	
 } else { # subthread
 	open IN, "$ARGV[0]/$ARGV[1].meth";
 	open CG, "| sort -k1 -k 2,2n > $ARGV[0]/$ARGV[1].CG.cov";
@@ -192,23 +185,17 @@ if (!defined $opt{'s'}) { # main thread
 			$pct = sprintf("%.2f", ($COORD_meth{$coord}{'x'}/$COORD_cov{$coord}{'x'})*100);
 			$unmeth = $COORD_cov{$coord}{'x'}-$COORD_meth{$coord}{'x'};
 			print CG "$coord\t$pct\t$unmeth\t$COORD_meth{$coord}{'x'}\n";
-			$CG_cov++; $CG_bases+=$COORD_cov{$coord}{'x'}; $CG_meth+=$COORD_meth{$coord}{'x'};
 		}
 		if (defined $COORD_cov{$coord}{'h'}) {
 			if (!defined $COORD_meth{$coord}{'h'}) {$COORD_meth{$coord}{'h'}=0};
 			$pct = sprintf("%.2f", ($COORD_meth{$coord}{'h'}/$COORD_cov{$coord}{'h'})*100);
 			$unmeth = $COORD_cov{$coord}{'h'}-$COORD_meth{$coord}{'h'};
 			print CH "$coord\t$pct\t$unmeth\t$COORD_meth{$coord}{'h'}\n";
-			$CH_cov++; $CH_bases+=$COORD_cov{$coord}{'h'}; $CH_meth+=$COORD_meth{$coord}{'h'};
 		}
 	}
-
-	$AllCov = $CG_bases+$CH_bases;
-	$CGpct = sprintf("%.2f", ($CG_meth/$CG_bases)*100);
-	$CHpct = sprintf("%.2f", ($CH_meth/$CH_bases)*100);
-	$cellInfo = "$ARGV[1]\t$AllCov\t$CG_cov\t$CGpct\t$CH_cov\t$CHpct";
-
-	system("echo '$cellInfo' > $ARGV[0]/$ARGV[1].complete");
+	
+	$ts = localtime(time);
+	system("echo '$ts' > $ARGV[0]/$ARGV[1].complete");
 	exit;
 }
 
